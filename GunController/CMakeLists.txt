@@ -7,7 +7,7 @@ pico_sdk_init()
 add_executable(GunController 
 gun_controller.c
 screendrivers/st7789.c
-graphics/renderer.cpp
+graphics/renderer.c
 )
 
 pico_enable_stdio_usb(GunController 1)

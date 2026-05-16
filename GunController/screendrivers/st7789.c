@@ -65,7 +65,7 @@ void st7789_raset(const render_context_t* a_context, uint16_t a_ys, uint16_t a_y
 
 static void st7789_reg(const render_context_t* a_context)
 {
-spi_init(a_context->spi, a_context->mhz * 1000 * 1000);
+    spi_init(a_context->spi, a_context->mhz * 1000 * 1000);
     spi_set_format(a_context->spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
 
     gpio_set_function(a_context->pin_clk, GPIO_FUNC_SPI);

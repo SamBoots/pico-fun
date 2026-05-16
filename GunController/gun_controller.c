@@ -2,7 +2,6 @@
 #include <string.h>
 #include "pico/stdlib.h"
 #include "screendrivers/st7789.h"
-#include "Graphics/font8x16.h"
 #include "types.h"
 
 #define TEST_W 240
@@ -17,7 +16,7 @@ int main(void)
     memset(&render_context, 0, sizeof(render_context));
     st7789_init(&render_context, TEST_W, TEST_H, 125);
 
-    while (1) {
+    while (true) {
         // make screen black
         st7789_fill(&render_context, 0x0000);
 

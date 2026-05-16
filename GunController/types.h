@@ -2,6 +2,7 @@
 #define TYPES_H
 
 #include "hardware/spi.h"  // spi_inst_t is defined here
+#define ST7789_MAX_WIDTH 320
 
 typedef struct render_context_t
 {
@@ -16,6 +17,8 @@ typedef struct render_context_t
     uint pin_cs;
     uint pin_rst;
     uint pin_bl;
+
+    uint8_t scl_buffer[ST7789_MAX_WIDTH * 2]; // used size = width * pixel_size
 
     spi_inst_t* spi;
 } render_context_t;
