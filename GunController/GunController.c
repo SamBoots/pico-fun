@@ -15,11 +15,9 @@ int main(void)
 
     st7789_fill(0x0000, TEST_W, TEST_H);
 
-    const uint8_t* fonts = font8x16[0];
-
     while (1) {
         int rand_y = rand() % TEST_H;
-        uint16_t rand_color = rand() % fonts[0];
+        uint16_t rand_color = rand() % 0xffff;
         
         st7789_set_cursor(0, rand_y, TEST_W, TEST_H);
 
