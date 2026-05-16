@@ -5,8 +5,9 @@ set(CMAKE_C_STANDARD 11)
 pico_sdk_init()
  
 add_executable(GunController 
-GunController.c
+gun_controller.c
 screendrivers/st7789.c
+graphics/renderer.cpp
 )
 
 pico_enable_stdio_usb(GunController 1)
