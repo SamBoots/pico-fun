@@ -17,18 +17,23 @@ int main(void)
     memset(&render_context, 0, sizeof(render_context));
     st7789_init(&render_context, TEST_W, TEST_H, 125);
 
-    st7789_fill(&render_context, 0x0000);
-
     while (1) {
-        int rand_y = rand() % TEST_H;
-        uint16_t rand_color = rand() % 0xffff;
-        
-        st7789_set_cursor(&render_context, 0, rand_y, TEST_W, TEST_H);
+        // make screen black
+        st7789_fill(&render_context, 0x0000);
 
-        for (int i = 0; i < TEST_W; i++) {
-            row_pixels[i] = rand_color;
-        }
+        // wait 1 second
+        sleep_ms(3000);
 
-        st7789_write(&render_context, row_pixels, sizeof(row_pixels));
+        // make screen white
+        st7789_fill(&render_context, 0xffff);
+
+        // wait 1 second
+        sleep_ms(3000);
+
+        // make screen ???
+        st7789_fill(&render_context, 0xf800);
+
+        // wait 1 second
+        sleep_ms(3000);
     }
 }

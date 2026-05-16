@@ -155,7 +155,7 @@ void st7789_ramwr(const render_context_t* a_context)
     spi_write_blocking(a_context->spi, &cmd, sizeof(cmd));
 
     sleep_us(1);
-    cs_low(a_context);
+    cs_high(a_context);
     dc_high(a_context);
     sleep_us(1);
 }
