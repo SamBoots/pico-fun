@@ -1,3 +1,6 @@
+#ifndef ST7780_H
+#define ST7780_H
+
 #include "hardware/spi.h"
 
 #define SPI_PORT    spi0
@@ -10,3 +13,5 @@ void st7789_ramwr();
 void st7789_write(const void* a_data, size_t a_len);
 void st7789_put(uint16_t a_pixel);
 void st7789_fill(uint16_t a_pixel, uint16_t a_spi_w, uint16_t a_spi_h);
+
+#endif // ST7780_H
