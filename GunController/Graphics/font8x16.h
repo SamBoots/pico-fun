@@ -26,7 +26,7 @@ static const uint8_t font8x16[FONT_CHAR_COUNT][FONT_HEIGHT] = {
         0b01100110,
         0b00111100,
         0b00000000,
-        0b00000000,
+        0b00000000
     },
     { // 1
         0b00011000,
@@ -44,7 +44,7 @@ static const uint8_t font8x16[FONT_CHAR_COUNT][FONT_HEIGHT] = {
         0b01111110,
         0b01111110,
         0b00000000,
-        0b00000000,
+        0b00000000
     },
     { // 2
         0b00111100,
@@ -62,7 +62,7 @@ static const uint8_t font8x16[FONT_CHAR_COUNT][FONT_HEIGHT] = {
         0b11111111,
         0b11111111,
         0b00000000,
-        0b00000000,
+        0b00000000
     },
     { // 3
         0b00111100,
@@ -80,7 +80,7 @@ static const uint8_t font8x16[FONT_CHAR_COUNT][FONT_HEIGHT] = {
         0b00111100,
         0b00000000,
         0b00000000,
-        0b00000000,
+        0b00000000
     },
     { // 4
         0b00000110,
@@ -98,7 +98,7 @@ static const uint8_t font8x16[FONT_CHAR_COUNT][FONT_HEIGHT] = {
         0b00000110,
         0b00000110,
         0b00000000,
-        0b00000000,
+        0b00000000
     },
     { // 5
         0b11111111,
@@ -116,7 +116,7 @@ static const uint8_t font8x16[FONT_CHAR_COUNT][FONT_HEIGHT] = {
         0b01111100,
         0b00000000,
         0b00000000,
-        0b00000000,
+        0b00000000
     },
     { // 6
         0b00111110,
@@ -134,7 +134,7 @@ static const uint8_t font8x16[FONT_CHAR_COUNT][FONT_HEIGHT] = {
         0b00111100,
         0b00000000,
         0b00000000,
-        0b00000000,
+        0b00000000
     },
     { // 7
         0b11111111,
@@ -152,7 +152,7 @@ static const uint8_t font8x16[FONT_CHAR_COUNT][FONT_HEIGHT] = {
         0b01100000,
         0b01100000,
         0b00000000,
-        0b00000000,
+        0b00000000
     },
     { // 8
         0b00111100,
@@ -170,7 +170,7 @@ static const uint8_t font8x16[FONT_CHAR_COUNT][FONT_HEIGHT] = {
         0b00111100,
         0b00000000,
         0b00000000,
-        0b00000000,
+        0b00000000
     },
     { // 9
         0b00111100,
@@ -188,8 +188,8 @@ static const uint8_t font8x16[FONT_CHAR_COUNT][FONT_HEIGHT] = {
         0b01111100,
         0b00000000,
         0b00000000,
-        0b00000000,
-    },
+        0b00000000
+    }
 };
 
 #endif // FONT8X16_H
