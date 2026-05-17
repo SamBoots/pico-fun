@@ -3,21 +3,21 @@
 #include "../render_types.h"
 #include "st7789.h"
  
-static inline void dc_low(const render_context_t* a_context)  { gpio_put(a_context->pin_dc, 0); }
-static inline void dc_high(const render_context_t* a_context) { gpio_put(a_context->pin_dc, 1); }
-static inline void cs_low(const render_context_t* a_context)  { gpio_put(a_context->pin_cs, 0); }
-static inline void cs_high(const render_context_t* a_context) { gpio_put(a_context->pin_cs, 1); }
+static inline void dc_low(const render_context_t* a_context)  { gpio_put(a_context->spi.pin_dc, 0); }
+static inline void dc_high(const render_context_t* a_context) { gpio_put(a_context->spi.pin_dc, 1); }
+static inline void cs_low(const render_context_t* a_context)  { gpio_put(a_context->spi.pin_cs, 0); }
+static inline void cs_high(const render_context_t* a_context) { gpio_put(a_context->spi.pin_cs, 1); }
  
 static void st7789_cmd(const render_context_t* a_context, uint8_t a_cmd, const uint8_t* a_data, size_t a_len)
 {
-    spi_set_format(a_context->spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+    spi_set_format(a_context->spi.spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
 
     sleep_us(1);
     cs_low(a_context);
     dc_low(a_context);
     sleep_us(1);
     
-    spi_write_blocking(a_context->spi, &a_cmd, sizeof(a_cmd));
+    spi_write_blocking(a_context->spi.spi, &a_cmd, sizeof(a_cmd));
 
     if (a_len)
     {
@@ -25,7 +25,7 @@ static void st7789_cmd(const render_context_t* a_context, uint8_t a_cmd, const u
         dc_high(a_context);
         sleep_us(1);
     
-        spi_write_blocking(a_context->spi, a_data, a_len);
+        spi_write_blocking(a_context->spi.spi, a_data, a_len);
     }
     sleep_us(1);
     cs_high(a_context);
@@ -61,16 +61,16 @@ void st7789_raset(const render_context_t* a_context, uint16_t a_ys, uint16_t a_y
 
 static void st7789_reg(const render_context_t* a_context)
 {
-    spi_init(a_context->spi, a_context->mhz * 1000 * 1000);
-    spi_set_format(a_context->spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+    spi_init(a_context->spi.spi, a_context->mhz * 1000 * 1000);
+    spi_set_format(a_context->spi.spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
 
-    gpio_set_function(a_context->pin_clk, GPIO_FUNC_SPI);
-    gpio_set_function(a_context->pin_din, GPIO_FUNC_SPI);
+    gpio_set_function(a_context->spi.pin_clk, GPIO_FUNC_SPI);
+    gpio_set_function(a_context->spi.pin_din, GPIO_FUNC_SPI);
 
-    gpio_init(a_context->pin_cs);  gpio_set_dir(a_context->pin_cs,  GPIO_OUT); gpio_put(a_context->pin_cs,  1);
-    gpio_init(a_context->pin_dc);  gpio_set_dir(a_context->pin_dc,  GPIO_OUT); gpio_put(a_context->pin_dc, 1);
-    gpio_init(a_context->pin_rst); gpio_set_dir(a_context->pin_rst, GPIO_OUT); gpio_put(a_context->pin_rst, 1);
-    gpio_init(a_context->pin_bl);  gpio_set_dir(a_context->pin_bl,  GPIO_OUT);
+    gpio_init(a_context->spi.pin_cs);  gpio_set_dir(a_context->spi.pin_cs,  GPIO_OUT); gpio_put(a_context->spi.pin_cs,  1);
+    gpio_init(a_context->spi.pin_dc);  gpio_set_dir(a_context->spi.pin_dc,  GPIO_OUT); gpio_put(a_context->spi.pin_dc, 1);
+    gpio_init(a_context->spi.pin_rst); gpio_set_dir(a_context->spi.pin_rst, GPIO_OUT); gpio_put(a_context->spi.pin_rst, 1);
+    gpio_init(a_context->spi.pin_bl);  gpio_set_dir(a_context->spi.pin_bl,  GPIO_OUT);
 
     sleep_ms(100);
     // SWRESET (01h): Software Reset
@@ -111,7 +111,7 @@ static void st7789_reg(const render_context_t* a_context)
     st7789_cmd(a_context, 0x29, NULL, 0);
     sleep_ms(10);
 
-    gpio_put(a_context->pin_bl, 1);
+    gpio_put(a_context->spi.pin_bl, 1);
 }
  
 void st7789_init(render_context_t* a_context, uint16_t a_w, uint16_t a_h, uint16_t a_mhz)
@@ -122,14 +122,14 @@ void st7789_init(render_context_t* a_context, uint16_t a_w, uint16_t a_h, uint16
     a_context->pixel_size = 2;
     a_context->mhz = a_mhz;
 
-    a_context->pin_clk = PICO_DEFAULT_SPI_SCK_PIN;
-    a_context->pin_din = PICO_DEFAULT_SPI_TX_PIN;
-    a_context->pin_dc = 20;
-    a_context->pin_cs = PICO_DEFAULT_SPI_CSN_PIN;
-    a_context->pin_rst = 21;
-    a_context->pin_bl = 22;
+    a_context->spi.pin_clk = PICO_DEFAULT_SPI_SCK_PIN;
+    a_context->spi.pin_din = PICO_DEFAULT_SPI_TX_PIN;
+    a_context->spi.pin_dc = 20;
+    a_context->spi.pin_cs = PICO_DEFAULT_SPI_CSN_PIN;
+    a_context->spi.pin_rst = 21;
+    a_context->spi.pin_bl = 22;
 
-    a_context->spi = spi0;
+    a_context->spi.spi = spi0;
     st7789_reg(a_context);
 }
 
@@ -142,7 +142,7 @@ void st7789_ramwr(const render_context_t* a_context)
 
     // RAMWR (2Ch): Memory Write
     uint8_t cmd = 0x2c;
-    spi_write_blocking(a_context->spi, &cmd, sizeof(cmd));
+    spi_write_blocking(a_context->spi.spi, &cmd, sizeof(cmd));
 
     sleep_us(1);
     cs_high(a_context);
@@ -152,18 +152,18 @@ void st7789_ramwr(const render_context_t* a_context)
 
 void st7789_write16(const render_context_t* a_context, const void* a_data, size_t a_len_pixels)
 {
-    spi_set_format(a_context->spi, 16, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+    spi_set_format(a_context->spi.spi, 16, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
     cs_low(a_context);
     dc_high(a_context);
-    spi_write16_blocking(a_context->spi, a_data, a_len_pixels);
+    spi_write16_blocking(a_context->spi.spi, a_data, a_len_pixels);
     cs_high(a_context);
 }
 
 void st7789_write8(const render_context_t* a_context, const void* a_data, size_t a_len_pixels)
 {
-    spi_set_format(a_context->spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+    spi_set_format(a_context->spi.spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
     cs_low(a_context);
     dc_high(a_context);
-    spi_write_blocking(a_context->spi, a_data, a_len_pixels);
+    spi_write_blocking(a_context->spi.spi, a_data, a_len_pixels);
     cs_high(a_context);
 }
