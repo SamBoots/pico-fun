@@ -1,8 +1,10 @@
 #include <stdlib.h>
 #include "pico/stdlib.h"
-#include "types.h"
 #include <string.h>
+#include "graphics/render_types.h"
 #include "graphics/renderer.h"
+#include "io/io_types.h"
+#include "io/button.h"
 
 #define TEST_W 240
 #define TEST_H 240
@@ -11,22 +13,24 @@ int main(void)
 {
     stdio_init_all();
     
-    render_context_t render_context;
-    memset(&render_context, 0, sizeof(render_context));
-    render_init_context(&render_context, TEST_W, TEST_H, 125);
+    button_context_t push_button;
+    memset(&push_button, 0, sizeof(push_button));
+
+    button_init_context(&push_button, 2);
+
     gpio_init(25);
     gpio_set_dir(25, GPIO_OUT);
     while (true) {
-        // make screen black
-        render_fill_area(&render_context, 0, 0, TEST_W, TEST_H, 0x0000);
-        gpio_put(25, 0);
-        // wait 2 second
-        sleep_ms(2000);
+        uint32_t now_ms = to_ms_since_boot(get_absolute_time());
 
-        // make screen white
-        render_fill_area(&render_context, 0, 0, TEST_W, TEST_H, 0xffff);
-        gpio_put(25, 1);
-        // wait 2 second
-        sleep_ms(2000);
+        button_update(&push_button, now_ms);
+        if (button_pressed(&push_button))
+        {
+            gpio_put(25, 1);
+        }
+        else if (button_released(&push_button))
+        {
+            gpio_put(25, 0);
+        }
     }
 }

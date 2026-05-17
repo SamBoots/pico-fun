@@ -8,6 +8,7 @@ add_executable(GunController
 gun_controller.c
 graphics/renderer.c
 graphics/drivers/st7789.c
+io/button.c
 )
 
 pico_enable_stdio_usb(GunController 1)

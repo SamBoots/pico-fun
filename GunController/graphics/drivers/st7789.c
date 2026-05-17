@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include "pico/stdlib.h"
-#include "../../types.h"
+#include "../render_types.h"
 #include "st7789.h"
  
 static inline void dc_low(const render_context_t* a_context)  { gpio_put(a_context->pin_dc, 0); }

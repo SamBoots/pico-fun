@@ -1,5 +1,5 @@
-#ifndef TYPES_H
-#define TYPES_H
+#ifndef RENDER_TYPES_H
+#define RENDER_TYPES_H
 
 #include "hardware/spi.h"  // spi_inst_t is defined here
 #define ST7789_MAX_WIDTH 320
@@ -23,4 +23,4 @@ typedef struct render_context_t
     spi_inst_t* spi;
 } render_context_t;
 
-#endif // TYPES_H
+#endif // RENDER_TYPES_H

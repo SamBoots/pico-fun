@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include "pico/stdlib.h"
-#include "../types.h"
+#include "render_types.h"
 #include "renderer.h"
 #include "drivers/st7789.h"
 #include "font8x16.h"
