@@ -18,7 +18,7 @@ typedef struct render_context_t
     uint pin_rst;
     uint pin_bl;
 
-    uint8_t scl_buffer[ST7789_MAX_WIDTH * 2]; // used size = width * pixel_size
+    uint8_t row_buf[ST7789_MAX_WIDTH * 2]; // used size = width * pixel_size
 
     spi_inst_t* spi;
 } render_context_t;

@@ -1,6 +1,6 @@
 #include <stdlib.h>
 #include "pico/stdlib.h"
-#include "../types.h"
+#include "../../types.h"
 #include "st7789.h"
  
 static inline void dc_low(const render_context_t* a_context)  { gpio_put(a_context->pin_dc, 0); }
@@ -100,8 +100,8 @@ static void st7789_reg(const render_context_t* a_context)
     // - Display Data Latch Data Order = LCD Refresh Left to Right
     st7789_cmd(a_context, 0x36, (uint8_t[]){ 0x00 }, 1);
 
-    st7789_caset(a_context, 0, a_context->width);
-    st7789_raset(a_context, 0, a_context->height);
+    st7789_caset(a_context, 0, a_context->width - 1);
+    st7789_raset(a_context, 0, a_context->height - 1);
 
     // INVON (21h): Display Inversion On
     st7789_cmd(a_context, 0x21, NULL, 0);

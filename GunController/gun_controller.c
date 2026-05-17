@@ -1,8 +1,8 @@
 #include <stdlib.h>
-#include <string.h>
 #include "pico/stdlib.h"
-#include "screendrivers/st7789.h"
 #include "types.h"
+#include <string.h>
+#include "graphics/renderer.h"
 
 #define TEST_W 240
 #define TEST_H 240
@@ -14,23 +14,24 @@ int main(void)
     
     render_context_t render_context;
     memset(&render_context, 0, sizeof(render_context));
-    st7789_init(&render_context, TEST_W, TEST_H, 125);
-
+    render_init_context(&render_context, TEST_W, TEST_H, 125);
+    gpio_init(25);
+    gpio_set_dir(25, GPIO_OUT);
     while (true) {
         // make screen black
-        st7789_fill(&render_context, 0x0000);
-
+        render_fill_area(&render_context, 0, 0, TEST_W - 1, TEST_H - 1, 0x0000);
+        gpio_put(25, 0);
         // wait 1 second
         sleep_ms(3000);
 
         // make screen white
-        st7789_fill(&render_context, 0xffff);
-
+        render_fill_area(&render_context, 0, 0, TEST_W - 1, TEST_H - 1, 0xffff);
+        gpio_put(25, 1);
         // wait 1 second
         sleep_ms(3000);
 
         // make screen ???
-        st7789_fill(&render_context, 0xf800);
+        render_fill_area(&render_context, 0, 0, TEST_W - 1, TEST_H - 1, 0xf800);
 
         // wait 1 second
         sleep_ms(3000);
