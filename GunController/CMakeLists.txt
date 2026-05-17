@@ -39,6 +39,7 @@ add_executable(GunController
 gun_controller.c
 graphics/renderer.c
 graphics/drivers/st7789.c
+graphics/drivers/ssd1306.c
 io/button.c
 )
 

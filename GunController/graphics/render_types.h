@@ -2,8 +2,13 @@
 #define RENDER_TYPES_H
 
 #include "hardware/spi.h"
+#include "hardware/i2c.h"
 
 #define ST7789_MAX_WIDTH 320
+#define SSD1306_MAX_FRAMEBUFFER 1024
+
+
+#define ROW_BUFFER_SIZE SSD1306_MAX_FRAMEBUFFER // resize this if another driver has a bigger buffer
 
 typedef struct render_context_t
 {
@@ -30,12 +35,13 @@ typedef struct render_context_t
             uint pin_sda;
             uint pin_scl;
             uint8_t address;
-            //i2c_inst_t* i2c;
+            uint16_t col_start, col_end;
+            uint16_t row_start, row_end;
+            i2c_inst_t* i2c;
         } i2c;
     };
 
-    uint8_t row_buf[ST7789_MAX_WIDTH * 2]; // used size = width * pixel_size
-
+    uint8_t buffer[ROW_BUFFER_SIZE];
 
 } render_context_t;
 
