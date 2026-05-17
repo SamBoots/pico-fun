@@ -7,14 +7,10 @@ static inline void dc_low(const render_context_t* a_context)  { gpio_put(a_conte
 static inline void dc_high(const render_context_t* a_context) { gpio_put(a_context->pin_dc, 1); }
 static inline void cs_low(const render_context_t* a_context)  { gpio_put(a_context->pin_cs, 0); }
 static inline void cs_high(const render_context_t* a_context) { gpio_put(a_context->pin_cs, 1); }
-
-// :)
-static bool st7789_data_mode = false;
  
 static void st7789_cmd(const render_context_t* a_context, uint8_t a_cmd, const uint8_t* a_data, size_t a_len)
 {
     spi_set_format(a_context->spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
-    st7789_data_mode = false;
 
     sleep_us(1);
     cs_low(a_context);
@@ -137,12 +133,6 @@ void st7789_init(render_context_t* a_context, uint16_t a_w, uint16_t a_h, uint16
     st7789_reg(a_context);
 }
 
-void st7789_set_cursor(const render_context_t* a_context, uint16_t a_x, uint16_t a_y, uint16_t a_w, uint16_t a_h)
-{
-    st7789_caset(a_context, a_x, a_w);
-    st7789_raset(a_context, a_y, a_h);
-}
-
 void st7789_ramwr(const render_context_t* a_context)
 {
     sleep_us(1);
@@ -160,29 +150,20 @@ void st7789_ramwr(const render_context_t* a_context)
     sleep_us(1);
 }
 
-void st7789_write(const render_context_t* a_context, const void* a_data, size_t a_len)
+void st7789_write16(const render_context_t* a_context, const void* a_data, size_t a_len_pixels)
 {
-    if (!st7789_data_mode) {
-        st7789_ramwr(a_context);
-        spi_set_format(a_context->spi, a_context->pixel_size * 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
-        st7789_data_mode = true;
-    }
-
-    spi_write16_blocking(a_context->spi, a_data, a_len / 2);
+    spi_set_format(a_context->spi, 16, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+    cs_low(a_context);
+    dc_high(a_context);
+    spi_write16_blocking(a_context->spi, a_data, a_len_pixels);
+    cs_high(a_context);
 }
 
-void st7789_put(const render_context_t* a_context, uint16_t a_pixel)
+void st7789_write8(const render_context_t* a_context, const void* a_data, size_t a_len_pixels)
 {
-    st7789_write(a_context, &a_pixel, sizeof(a_pixel));
-}
-
-void st7789_fill(const render_context_t* a_context, uint16_t a_pixel)
-{
-    int num_pixels = a_context->width * a_context->height;
-
-    st7789_set_cursor(a_context, 0, 0, a_context->width, a_context->height);
-
-    for (int i = 0; i < num_pixels; i++) {
-        st7789_put(a_context, a_pixel);
-    }
+    spi_set_format(a_context->spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
+    cs_low(a_context);
+    dc_high(a_context);
+    spi_write_blocking(a_context->spi, a_data, a_len_pixels);
+    cs_high(a_context);
 }
