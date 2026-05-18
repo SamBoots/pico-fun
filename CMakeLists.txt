@@ -38,6 +38,7 @@ pico_sdk_init()
 add_executable(S-OS
 main.c
 app/ammo_counter.c
+app/snake.c
 memory/memory_arena.c
 graphics/renderer.c
 graphics/drivers/st7789.c

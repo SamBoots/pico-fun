@@ -48,7 +48,7 @@ static void gun_update_screen(gun_context_t* a_gun_ctx, render_context_t* a_ctx)
     render_flush(a_ctx);
 }
 
-void ammo_counter_init_app(app_context_t* a_app, memory_arena_t* a_arena, const render_context_t* a_ctx)
+void ammo_counter_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx)
 {
     a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
     a_app->user_data = memory_arena_allocate(a_arena, sizeof(gun_context_t));
