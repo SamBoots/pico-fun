@@ -2,11 +2,10 @@
 #define TEST_H 48
  
 #include "pico/stdlib.h"
-#include "graphics/render_types.h"
-#include "graphics/renderer.h"
-#include "io/io_types.h"
-#include "io/button.h"
-#include "string.h"
+#include "../graphics/render_types.h"
+#include "../graphics/renderer.h"
+#include "../io/io_types.h"
+#include "../io/button.h"
 
 static render_context_t g_render_ctx;
 

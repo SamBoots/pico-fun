@@ -28,42 +28,42 @@ set(PICO_BOARD pico CACHE STRING "Board type")
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
-project(GunController C CXX ASM)
+project(S-OS C CXX ASM)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
 # Add executable. Default name is the project name, version 0.1
 
-add_executable(GunController
-gun_controller.c
+add_executable(S-OS
+apps/ammo_counter.c
 graphics/renderer.c
 graphics/drivers/st7789.c
 graphics/drivers/ssd1306.c
 io/button.c
 )
 
-pico_set_program_name(GunController "GunController")
-pico_set_program_version(GunController "0.1")
+pico_set_program_name(S-OS "S-OS")
+pico_set_program_version(S-OS "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(GunController 0)
-pico_enable_stdio_usb(GunController 1)
+pico_enable_stdio_uart(S-OS 0)
+pico_enable_stdio_usb(S-OS 1)
 
 # Add the standard library to the build
-target_link_libraries(GunController
+target_link_libraries(S-OS
         pico_stdlib)
 
 # Add the standard include files to the build
-target_include_directories(GunController PRIVATE
+target_include_directories(S-OS PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
 )
 
 # Add any user requested libraries
-target_link_libraries(GunController 
+target_link_libraries(S-OS 
         hardware_spi
         hardware_i2c
         )
 
-pico_add_extra_outputs(GunController)
+pico_add_extra_outputs(S-OS)
 
