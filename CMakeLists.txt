@@ -36,7 +36,9 @@ pico_sdk_init()
 # Add executable. Default name is the project name, version 0.1
 
 add_executable(S-OS
-apps/ammo_counter.c
+main.c
+app/ammo_counter.c
+memory/memory_arena.c
 graphics/renderer.c
 graphics/drivers/st7789.c
 graphics/drivers/ssd1306.c
