@@ -27,7 +27,6 @@ int render_draw_rect(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16
 
 int render_flush(render_context_t* a_ctx)
 {
-        a_ctx->buffer[0] = 0x40; 
     ssd1306_flush(a_ctx);
     memset(a_ctx->buffer, 0, sizeof(a_ctx->buffer));
 }

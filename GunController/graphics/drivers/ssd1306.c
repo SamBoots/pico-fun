@@ -4,7 +4,6 @@
 #include "ssd1306.h"
 #include "../font8x16.h"
 #include "string.h"
-#include "stdio.h"
 
 #define SSD1306_COL_OFFSET 32  // 64px panel sits at columns 32..95 on the 128px chip
 
