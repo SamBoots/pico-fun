@@ -25,6 +25,8 @@ typedef struct snake_context_t
     uint8_t* map;
 
     uint16_t snake[MAX_SNAKE];
+    int16_t snake_dir_x;
+    int16_t snake_dir_y;
     uint16_t snake_size;
     uint16_t apple_index_pos;
 } snake_context_t;
@@ -33,11 +35,11 @@ static void snake_set_tile(snake_context_t* a_snake_ctx, uint32_t a_index, bool 
 {
     if (a_active)
     {
-        a_snake_ctx->map[a_index >> 3] |= (a_index << (a_index & 7));
+        a_snake_ctx->map[a_index >> 3] |= (1 << (a_index & 7));
     }
     else
     {
-        a_snake_ctx->map[a_index >> 3] &= ~(a_index << (a_index & 7));
+        a_snake_ctx->map[a_index >> 3] &= ~(1 << (a_index & 7));
     }
 }
 
@@ -49,7 +51,7 @@ static inline bool snake_read_tile(snake_context_t* a_snake_ctx, uint32_t a_inde
 static void snake_place_apple(snake_context_t* a_snake_ctx)
 {
     snake_set_tile(a_snake_ctx, a_snake_ctx->apple_index_pos, false);
-    uint16_t apple_pos = rand() % (a_snake_ctx->map_x * a_snake_ctx->map_y + 1);
+    uint16_t apple_pos = rand() % (a_snake_ctx->map_x * a_snake_ctx->map_y);
     for (int i = 0; i < a_snake_ctx->snake_size; i++)
     {
         if (a_snake_ctx->snake[i] == apple_pos)
@@ -62,30 +64,38 @@ static void snake_place_apple(snake_context_t* a_snake_ctx)
     snake_set_tile(a_snake_ctx, a_snake_ctx->apple_index_pos, true);
 }
 
-static inline bool snake_move(snake_context_t* a_snake_ctx, int a_x, int a_y)
+static inline bool snake_move(snake_context_t* a_snake_ctx)
 {
-    if (a_x > a_snake_ctx->map_x || a_x < 0 || a_y > a_snake_ctx->map_y || a_y < 0)
+    int16_t x = a_snake_ctx->snake[0] % a_snake_ctx->map_x + a_snake_ctx->snake_dir_x;
+    int16_t y = a_snake_ctx->snake[0] / a_snake_ctx->map_x + a_snake_ctx->snake_dir_y;
+
+    if (x >= a_snake_ctx->map_x || x < 0 || y >= a_snake_ctx->map_y || y < 0)
     {
         return false;
     }
 
-    uint16_t new_head = a_y * a_snake_ctx->map_x + a_x;
+    uint16_t new_head = y * a_snake_ctx->map_x + x;
     uint16_t old_tail = a_snake_ctx->snake[a_snake_ctx->snake_size - 1];
-    for (int i = 0; i < a_snake_ctx->snake_size; i++)
-    {
-        if (a_snake_ctx->snake[i] == new_head)
-            return false;
-    }
 
     snake_set_tile(a_snake_ctx, new_head, true);
     if (new_head == a_snake_ctx->apple_index_pos)
+    {
         snake_place_apple(a_snake_ctx);
+        a_snake_ctx->snake_size++;
+    }
     else
+    {
         snake_set_tile(a_snake_ctx, old_tail, false);
+        for (int i = 0; i < a_snake_ctx->snake_size - 1; i++)
+        {
+            if (a_snake_ctx->snake[i] == new_head)
+                return false;
+        }
+    }
 
     // update snek
-    for (int i = a_snake_ctx->snake_size; i > 1; i++)
-        a_snake_ctx->snake[i] == a_snake_ctx->snake[i - 1];
+    for (int i = a_snake_ctx->snake_size - 1; i > 0; i--)
+        a_snake_ctx->snake[i] = a_snake_ctx->snake[i - 1];
     a_snake_ctx->snake[0] = new_head;
 
     return true;
@@ -101,20 +111,25 @@ void snake_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_contex
     
     snake_context_t* snake_ctx = (snake_context_t*)a_app->user_data;
     snake_ctx->ms_last_frame = 0;
-    snake_ctx->ms_per_frame = 1000;
+    snake_ctx->ms_per_frame = 500;
 
     snake_ctx->map_x = a_ctx->width;
     snake_ctx->map_y = a_ctx->height;
-    snake_ctx->map = memory_arena_allocate(a_arena, snake_ctx->map_x * snake_ctx->map_y / 8);
+    snake_ctx->map = memory_arena_allocate(a_arena, (snake_ctx->map_x * snake_ctx->map_y + 7) / 8);
 
     snake_place_apple(snake_ctx);
-    snake_ctx->snake[0] = snake_ctx->map_y / 2 * snake_ctx->map_x + snake_ctx->map_x / 2;
-    snake_ctx->snake_size = 1;
+    snake_ctx->snake_dir_x = 1;
+    snake_ctx->snake_dir_y = 0;
+    snake_ctx->snake[0] = snake_ctx->map_y / 2 * snake_ctx->map_x + snake_ctx->map_x / 4;
+    snake_ctx->snake[1] = snake_ctx->snake[0] - 1;
+    snake_ctx->snake[2] = snake_ctx->snake[0] - 2;
+    snake_ctx->snake_size = 3;
 
     button_init_context(&snake_ctx->north_button, 2, 10);
     button_init_context(&snake_ctx->south_button, 3, 10);
     button_init_context(&snake_ctx->west_button, 9, 10);
     button_init_context(&snake_ctx->east_button, 13, 10);
+    snake_set_tile(snake_ctx, snake_ctx->snake[0], true);
 }
 
 bool snake_update(app_context_t* a_app, uint32_t a_now_ms)
@@ -122,9 +137,37 @@ bool snake_update(app_context_t* a_app, uint32_t a_now_ms)
     snake_context_t* snake_ctx = (snake_context_t*)a_app->user_data;
     if ((uint32_t)(a_now_ms - snake_ctx->ms_last_frame) > snake_ctx->ms_per_frame)
     {
+        button_update(&snake_ctx->north_button, a_now_ms);
+        button_update(&snake_ctx->south_button, a_now_ms);
+        button_update(&snake_ctx->west_button, a_now_ms);
+        button_update(&snake_ctx->east_button, a_now_ms);
+
+        if (button_pressed(&snake_ctx->west_button))
+        {
+            snake_ctx->snake_dir_x = 1;
+            snake_ctx->snake_dir_y = 0;
+        }
+        else if (button_pressed(&snake_ctx->east_button))
+        {
+            snake_ctx->snake_dir_x = -1;
+            snake_ctx->snake_dir_y = 0;
+        }
+        else if (button_pressed(&snake_ctx->south_button))
+        {
+            snake_ctx->snake_dir_x = 0;
+            snake_ctx->snake_dir_y = 1;
+        }
+        else if (button_pressed(&snake_ctx->north_button))
+        {
+            snake_ctx->snake_dir_x = 0;
+            snake_ctx->snake_dir_y = -1;
+        }
+
         snake_ctx->ms_last_frame = a_now_ms;
 
+        snake_move(snake_ctx);
     }
+    return true;
 }
 
 void snake_render(app_context_t* a_app, render_context_t* a_ctx)
@@ -138,6 +181,7 @@ void snake_render(app_context_t* a_app, render_context_t* a_ctx)
                 render_draw_pixel(a_ctx, x, y, 255);
         }
     }
+    render_flush(a_ctx);
 }
 
 void snake_close(app_context_t* a_app)

@@ -11,6 +11,7 @@ uint8_t* memory_arena_allocate(memory_arena_t* a_arena, uint32_t a_size)
         return NULL;
     }
     a_arena->offset = new_offset;
+    memset(&a_arena->buffer[old_offset], 0, a_size);
     return &a_arena->buffer[old_offset];
 }
 
@@ -21,6 +22,5 @@ uint32_t memory_arena_get_marker(memory_arena_t* a_arena)
 
 void memory_arena_set_marker(memory_arena_t* a_arena, uint32_t a_marker)
 {
-    memset(&a_arena[a_marker], 0, a_arena->offset - a_marker);
     a_arena->offset = a_marker;
 }
