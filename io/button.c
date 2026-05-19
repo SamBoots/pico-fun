@@ -18,6 +18,11 @@ int button_init_context(button_context_t* a_ctx, uint16_t a_pin, uint16_t a_debo
     return 1;
 }
 
+int button_free_context(button_context_t* a_ctx)
+{
+    gpio_deinit(a_ctx->pin);
+}
+
 int button_update(button_context_t* a_ctx, uint32_t a_now_ms)
 {
     if ((uint32_t)(a_now_ms - a_ctx->last_change_ms) > a_ctx->debounce_ms)

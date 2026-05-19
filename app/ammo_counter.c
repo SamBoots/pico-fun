@@ -95,6 +95,7 @@ void ammo_counter_render(app_context_t* a_app, render_context_t* a_ctx)
 
 void ammo_counter_close(app_context_t* a_app)
 {
-    (void)a_app;
-    // nothing to close
+    gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
+    button_free_context(&gun_ctx->fire_button);
+    button_free_context(&gun_ctx->reload_button);
 }

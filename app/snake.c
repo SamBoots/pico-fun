@@ -192,5 +192,9 @@ void snake_render(app_context_t* a_app, render_context_t* a_ctx)
 
 void snake_close(app_context_t* a_app)
 {
-    (void)a_app;
+    snake_context_t* snake_ctx = (snake_context_t*)a_app->user_data;
+    button_free_context(&snake_ctx->north_button);
+    button_free_context(&snake_ctx->south_button);
+    button_free_context(&snake_ctx->west_button);
+    button_free_context(&snake_ctx->east_button);
 }
