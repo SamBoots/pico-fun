@@ -20,6 +20,7 @@ typedef struct snake_context_t
     uint32_t ms_last_frame;
     uint32_t ms_per_frame;
 
+    uint16_t map_scale;
     uint16_t map_x;
     uint16_t map_y;
     uint8_t* map;
@@ -113,8 +114,9 @@ void snake_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_contex
     snake_ctx->ms_last_frame = 0;
     snake_ctx->ms_per_frame = 500;
 
-    snake_ctx->map_x = a_ctx->width;
-    snake_ctx->map_y = a_ctx->height;
+    snake_ctx->map_scale = 4;
+    snake_ctx->map_x = a_ctx->width / snake_ctx->map_scale;
+    snake_ctx->map_y = a_ctx->height / snake_ctx->map_scale;
     snake_ctx->map = memory_arena_allocate(a_arena, (snake_ctx->map_x * snake_ctx->map_y + 7) / 8);
 
     snake_place_apple(snake_ctx);
@@ -173,11 +175,11 @@ bool snake_update(app_context_t* a_app, uint32_t a_now_ms)
 void snake_render(app_context_t* a_app, render_context_t* a_ctx)
 {
     snake_context_t* snake_ctx = (snake_context_t*)a_app->user_data;
-    for (int x = 0; x < snake_ctx->map_x; x++)
+    for (int x = 0; x < snake_ctx->map_x * snake_ctx->map_scale; x++)
     {
-        for (int y = 0; y < snake_ctx->map_y; y++)
+        for (int y = 0; y < snake_ctx->map_y * snake_ctx->map_scale; y++)
         {
-            if (snake_read_tile(snake_ctx, y * snake_ctx->map_x + x))
+            if (snake_read_tile(snake_ctx, (y / snake_ctx->map_scale) * snake_ctx->map_x + (x / snake_ctx->map_scale)))
                 render_draw_pixel(a_ctx, x, y, 255);
         }
     }
