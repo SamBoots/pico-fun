@@ -29,7 +29,6 @@ typedef struct snake_context_t
     int16_t snake_dir_x;
     int16_t snake_dir_y;
     uint16_t snake_size;
-    uint16_t apple_index_pos;
 } snake_context_t;
 
 static void snake_set_tile(snake_context_t* a_snake_ctx, uint32_t a_index, bool a_active)
@@ -51,7 +50,6 @@ static inline bool snake_read_tile(snake_context_t* a_snake_ctx, uint32_t a_inde
 
 static void snake_place_apple(snake_context_t* a_snake_ctx)
 {
-    snake_set_tile(a_snake_ctx, a_snake_ctx->apple_index_pos, false);
     uint16_t apple_pos = rand() % (a_snake_ctx->map_x * a_snake_ctx->map_y);
     for (int i = 0; i < a_snake_ctx->snake_size; i++)
     {
@@ -61,15 +59,13 @@ static void snake_place_apple(snake_context_t* a_snake_ctx)
             return;
         }
     }
-    a_snake_ctx->apple_index_pos = apple_pos;
-    snake_set_tile(a_snake_ctx, a_snake_ctx->apple_index_pos, true);
+    snake_set_tile(a_snake_ctx, apple_pos, true);
 }
 
-static inline bool snake_move(snake_context_t* a_snake_ctx)
+static bool snake_move(snake_context_t* a_snake_ctx)
 {
     int16_t x = a_snake_ctx->snake[0] % a_snake_ctx->map_x + a_snake_ctx->snake_dir_x;
     int16_t y = a_snake_ctx->snake[0] / a_snake_ctx->map_x + a_snake_ctx->snake_dir_y;
-
     if (x >= a_snake_ctx->map_x || x < 0 || y >= a_snake_ctx->map_y || y < 0)
     {
         return false;
@@ -78,28 +74,42 @@ static inline bool snake_move(snake_context_t* a_snake_ctx)
     uint16_t new_head = y * a_snake_ctx->map_x + x;
     uint16_t old_tail = a_snake_ctx->snake[a_snake_ctx->snake_size - 1];
 
-    snake_set_tile(a_snake_ctx, new_head, true);
-    if (new_head == a_snake_ctx->apple_index_pos)
-    {
-        snake_place_apple(a_snake_ctx);
-        a_snake_ctx->snake_size++;
-    }
-    else
-    {
-        snake_set_tile(a_snake_ctx, old_tail, false);
-        for (int i = 0; i < a_snake_ctx->snake_size - 1; i++)
-        {
-            if (a_snake_ctx->snake[i] == new_head)
-                return false;
-        }
-    }
-
     // update snek
     for (int i = a_snake_ctx->snake_size - 1; i > 0; i--)
         a_snake_ctx->snake[i] = a_snake_ctx->snake[i - 1];
+
+    for (int i = 0; i < a_snake_ctx->snake_size - 1; i++)
+    {
+        if (a_snake_ctx->snake[i] == new_head)
+            return false;
+    }
+    
+    if (snake_read_tile(a_snake_ctx, new_head))
+    {
+        snake_place_apple(a_snake_ctx);
+        a_snake_ctx->snake[a_snake_ctx->snake_size] = old_tail; 
+        ++a_snake_ctx->snake_size;
+    }
+    else
+        snake_set_tile(a_snake_ctx, old_tail, false);
     a_snake_ctx->snake[0] = new_head;
+    snake_set_tile(a_snake_ctx, new_head, true);
 
     return true;
+}
+
+static void snake_start_game(snake_context_t* a_snake_ctx)
+{
+    memory_set(a_snake_ctx->map, 0, (a_snake_ctx->map_x * a_snake_ctx->map_y + 7) / 8);
+
+    a_snake_ctx->snake_dir_x = 1;
+    a_snake_ctx->snake_dir_y = 0;
+    a_snake_ctx->snake[0] = a_snake_ctx->map_y / 2 * a_snake_ctx->map_x + a_snake_ctx->map_x / 4;
+    a_snake_ctx->snake[1] = a_snake_ctx->snake[0] - 1;
+    a_snake_ctx->snake_size = 2;
+    snake_set_tile(a_snake_ctx, a_snake_ctx->snake[0], true);
+    snake_set_tile(a_snake_ctx, a_snake_ctx->snake[1], true);
+    snake_place_apple(a_snake_ctx);
 }
 
 void snake_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx)
@@ -112,26 +122,19 @@ void snake_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_contex
     
     snake_context_t* snake_ctx = (snake_context_t*)a_app->user_data;
     snake_ctx->ms_last_frame = 0;
-    snake_ctx->ms_per_frame = 500;
+    snake_ctx->ms_per_frame = 250;
 
-    snake_ctx->map_scale = 4;
+    snake_ctx->map_scale = 8;
     snake_ctx->map_x = a_ctx->width / snake_ctx->map_scale;
     snake_ctx->map_y = a_ctx->height / snake_ctx->map_scale;
     snake_ctx->map = memory_arena_allocate(a_arena, (snake_ctx->map_x * snake_ctx->map_y + 7) / 8);
-
-    snake_place_apple(snake_ctx);
-    snake_ctx->snake_dir_x = 1;
-    snake_ctx->snake_dir_y = 0;
-    snake_ctx->snake[0] = snake_ctx->map_y / 2 * snake_ctx->map_x + snake_ctx->map_x / 4;
-    snake_ctx->snake[1] = snake_ctx->snake[0] - 1;
-    snake_ctx->snake[2] = snake_ctx->snake[0] - 2;
-    snake_ctx->snake_size = 3;
 
     button_init_context(&snake_ctx->north_button, 2, 10);
     button_init_context(&snake_ctx->south_button, 3, 10);
     button_init_context(&snake_ctx->west_button, 9, 10);
     button_init_context(&snake_ctx->east_button, 13, 10);
-    snake_set_tile(snake_ctx, snake_ctx->snake[0], true);
+
+    snake_start_game(snake_ctx);
 }
 
 bool snake_update(app_context_t* a_app, uint32_t a_now_ms)
@@ -167,7 +170,8 @@ bool snake_update(app_context_t* a_app, uint32_t a_now_ms)
 
         snake_ctx->ms_last_frame = a_now_ms;
 
-        snake_move(snake_ctx);
+        if (!snake_move(snake_ctx))
+            snake_start_game(snake_ctx);
     }
     return true;
 }

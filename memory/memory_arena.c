@@ -24,3 +24,8 @@ void memory_arena_set_marker(memory_arena_t* a_arena, uint32_t a_marker)
 {
     a_arena->offset = a_marker;
 }
+
+void* memory_set(void* a_src, int a_val, uint32_t a_len)
+{
+    return memset(a_src, a_val, a_len);
+}
