@@ -33,14 +33,9 @@ typedef struct snake_context_t
 
 static void snake_set_tile(snake_context_t* a_snake_ctx, uint32_t a_index, bool a_active)
 {
-    if (a_active)
-    {
-        a_snake_ctx->map[a_index >> 3] |= (1 << (a_index & 7));
-    }
-    else
-    {
-        a_snake_ctx->map[a_index >> 3] &= ~(1 << (a_index & 7));
-    }
+    uint32_t mask = 1 << (a_index & 7);
+    uint32_t byte = a_index >> 3;
+    a_snake_ctx->map[byte] = (a_snake_ctx->map[byte] & ~mask) | (a_active << (a_index & 7));
 }
 
 static inline bool snake_read_tile(snake_context_t* a_snake_ctx, uint32_t a_index)

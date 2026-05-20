@@ -5,6 +5,9 @@
 #include "graphics/render_types.h"
 #include "graphics/renderer.h"
 
+#include "io/io_types.h"
+#include "io/button.h"
+
 #include "memory/memory_arena.h"
 
 #include "app/app.h"
@@ -46,10 +49,15 @@ int main(void)
     app_context_t app;
     memory_set(&app, 0, sizeof(app));
 
+    button_context_t switch_app_button;
+    button_init_context(&switch_app_button, 2, 30);
+    switch_app(&app, app_inits[current_app++]);
+
     while (true)
     {
         uint32_t now_ms = to_ms_since_boot(get_absolute_time());
-        if ((uint32_t)(now_ms - last_app_loaded) > load_new_app_ms)
+        button_update(&switch_app_button, now_ms);
+        if (button_pressed(&switch_app_button))
         {
             printf("new app loaded");
             switch_app(&app, app_inits[current_app++]);

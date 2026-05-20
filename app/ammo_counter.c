@@ -56,13 +56,13 @@ void ammo_counter_init_app(app_context_t* a_app, memory_arena_t* a_arena, render
     
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
 
-    gun_ctx->max_ammo = 42;
+    gun_ctx->max_ammo = 10;
     gun_ctx->current_ammo = 42;
     gun_ctx->fire_rate_ms = 80;
     gun_ctx->last_shot_ms = 0;
 
-    button_init_context(&gun_ctx->fire_button, 2, 10);
-    button_init_context(&gun_ctx->reload_button, 3, 10);
+    button_init_context(&gun_ctx->fire_button, 3, 10);
+    button_init_context(&gun_ctx->reload_button, 6, 10);
     gun_update_screen(gun_ctx, a_ctx);
 }
 

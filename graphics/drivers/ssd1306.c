@@ -3,6 +3,7 @@
 #include "../render_types.h"
 #include "ssd1306.h"
 #include "../font8x16.h"
+#include "../font4x8.h"
 #include "string.h"
 
 #define SSD1306_COL_OFFSET 32  // 64px panel sits at columns 32..95 on the 128px chip
@@ -66,10 +67,9 @@ void ssd1306_init(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t 
 void ssd1306_draw_pixel(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16_t a_color)
 {
     uint8_t* dst = &a_ctx->buffer[1];
-    if (a_color)
-        dst[(a_y / 8) * a_ctx->width + a_x] |=  (1 << (a_y % 8));
-    else
-        dst[(a_y / 8) * a_ctx->width + a_x] &= ~(1 << (a_y % 8));
+    uint32_t byte  = (a_y / 8) * a_ctx->width + a_x;
+    uint32_t bit   = 1 << (a_y % 8);
+    dst[byte] = (dst[byte] & ~bit) | (!!a_color * bit);
 }
 
 void ssd1306_draw_rect(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16_t a_w, uint16_t a_h, uint16_t a_color)
@@ -83,13 +83,13 @@ void ssd1306_draw_rect(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint
     }
 }
 
-void ssd1306_draw_glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_color, uint16_t a_x, uint16_t a_y)
+void ssd1306_draw_8x16glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_color, uint16_t a_x, uint16_t a_y)
 {
-    int glyph_w  = 8 * a_scale;
+    int glyph_w = 8 * a_scale;
     int glyph_h = 16 * a_scale;
     for (int i = 0; i < a_len; i++)
     {
-        const uint8_t* glyph = font8x16[a_str[i] - FONT_FIRST_CHAR];
+        const uint8_t* glyph = font8x16_glyph(a_str[i]);
         int x_offset = i * (glyph_w + a_spacing);
         for (int y = 0; y < glyph_h; y++)
         {
@@ -97,6 +97,26 @@ void ssd1306_draw_glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_
             for (int x = 0; x < glyph_w; x++)
             {
                 uint16_t color = (bits & (1 << (7 - x / a_scale))) ? a_color : 0x0000;
+                ssd1306_draw_pixel(a_ctx, a_x + x + x_offset, a_y + y, color);
+            }
+        }
+    }
+}
+
+void ssd1306_draw_4x8glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_color, uint16_t a_x, uint16_t a_y)
+{
+    int glyph_w = 4 * a_scale;
+    int glyph_h = 8 * a_scale;
+    for (int i = 0; i < a_len; i++)
+    {
+        const uint8_t* glyph = font4x8_glyph(a_str[i]);
+        int x_offset = i * (glyph_w + a_spacing);
+        for (int x = 0; x < glyph_w; x++)
+        {
+            uint8_t bits = glyph[x / a_scale];
+            for (int y  = 0; y < glyph_h; y++)
+            {
+                uint16_t color = (bits & (1 << (7 - y / a_scale))) ? a_color : 0x0000;
                 ssd1306_draw_pixel(a_ctx, a_x + x + x_offset, a_y + y, color);
             }
         }
