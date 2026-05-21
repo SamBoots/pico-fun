@@ -39,11 +39,13 @@ add_executable(S-OS
 main.c
 app/ammo_counter.c
 app/snake.c
+app/pwm_test.c
 memory/memory_arena.c
 graphics/renderer.c
 graphics/drivers/st7789.c
 graphics/drivers/ssd1306.c
 io/button.c
+audio/pwm.c
 )
 
 pico_set_program_name(S-OS "S-OS")
@@ -66,6 +68,8 @@ target_include_directories(S-OS PRIVATE
 target_link_libraries(S-OS 
         hardware_spi
         hardware_i2c
+        hardware_pwm
+        hardware_dma
         )
 
 pico_add_extra_outputs(S-OS)
