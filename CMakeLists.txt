@@ -45,7 +45,7 @@ graphics/renderer.c
 graphics/drivers/st7789.c
 graphics/drivers/ssd1306.c
 io/button.c
-audio/pwm.c
+#audio/pwm.c
 )
 
 pico_set_program_name(S-OS "S-OS")

@@ -1,5 +1,5 @@
-#define TEST_W 64
-#define TEST_H 48
+#define TEST_W 240
+#define TEST_H 280
  
 #include "pico/stdlib.h"
 #include "graphics/render_types.h"
@@ -22,8 +22,8 @@ static memory_arena_t g_memory_arena;
 // add all apps you want to use here
 app_init_t app_inits[] =
 {
-    ammo_counter_init_app,
-    snake_init_app
+    snake_init_app,
+    ammo_counter_init_app
 };
 
 void switch_app(app_context_t* a_app, void (*a_init)(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx))

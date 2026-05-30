@@ -42,6 +42,7 @@ typedef struct render_context_t
     };
 
     uint8_t buffer[ROW_BUFFER_SIZE];
+    uint16_t buffer_offset;
 
 } render_context_t;
 
