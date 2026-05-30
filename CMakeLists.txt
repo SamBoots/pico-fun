@@ -39,6 +39,7 @@ add_executable(S-OS
 main.c
 app/ammo_counter.c
 app/snake.c
+app/tetris.c
 app/pwm_test.c
 memory/memory_arena.c
 graphics/renderer.c
