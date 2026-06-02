@@ -20,10 +20,12 @@ static void send_cmd2(const render_context_t* a_ctx, uint8_t a_cmd, uint8_t a_ar
     i2c_write_blocking(i2c0, a_ctx->i2c.address, buf, 3, false);
 }
 
-void ssd1306_init(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a_mhz)
+void ssd1306_init(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a_x_offset, uint16_t a_y_offset, uint16_t a_mhz)
 {
     a_ctx->width = a_w;
     a_ctx->height = a_h;
+    a_ctx->x_offset = a_x_offset;
+    a_ctx->y_offset = a_y_offset;
     a_ctx->pixel_size = 1;
     a_ctx->mhz = 0;  // unused for I2C
     (void)a_mhz;

@@ -45,7 +45,8 @@ int main(void)
     uint32_t last_app_loaded = load_new_app_ms;
     uint16_t current_app = 0;
 
-    render_init_context(&g_render_ctx, TEST_W, TEST_H, 0, 20, 125);
+    render_load_func(&g_render_ctx, DRIVER_ST7789);
+    render_init_context(&g_render_ctx, TEST_W, TEST_H, 0, 20, 10 * 1000 * 1000);
     app_context_t app;
     memory_set(&app, 0, sizeof(app));
 
