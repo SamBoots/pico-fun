@@ -7,9 +7,9 @@
 #include "string.h"
 
 
-int render_init_context(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a_mhz)
+int render_init_context(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a_x_offset, uint16_t a_y_offset, uint16_t a_mhz)
 {
-    st7789_init(a_ctx, a_w, a_h, a_mhz);
+    st7789_init(a_ctx, a_w, a_h, a_x_offset, a_y_offset, a_mhz);
     return 1;
 }
 

@@ -7,7 +7,6 @@
 #define ST7789_MAX_WIDTH 320
 #define SSD1306_MAX_FRAMEBUFFER 1024
 
-
 #define ROW_BUFFER_SIZE SSD1306_MAX_FRAMEBUFFER // resize this if another driver has a bigger buffer
 
 typedef struct render_context_t
@@ -16,7 +15,9 @@ typedef struct render_context_t
     uint16_t height;
     uint16_t pixel_size;
     uint16_t mhz;
-
+    uint16_t x_offset;
+    uint16_t y_offset;
+    
     union 
     {
         struct
@@ -30,7 +31,7 @@ typedef struct render_context_t
             uint pin_bl;
         } spi;
 
-        struct 
+        struct
         {
             uint pin_sda;
             uint pin_scl;

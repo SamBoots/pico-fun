@@ -31,10 +31,10 @@ static void st7789_send_data(const render_context_t* a_ctx, const uint8_t* a_dat
 static void st7789_caset(const render_context_t* a_ctx, uint16_t a_xs, uint16_t a_xe)
 {
     const uint8_t data[] = {
-        a_xs >> 8,
-        a_xs & 0xff,
-        a_xe >> 8,
-        a_xe & 0xff
+        (a_xs + a_ctx->x_offset) >> 8,
+        (a_xs + a_ctx->x_offset) & 0xff,
+        (a_xe + a_ctx->x_offset) >> 8,
+        (a_xe + a_ctx->x_offset) & 0xff
     };
     st7789_send_cmd(a_ctx, 0x2a);
     st7789_send_data(a_ctx, data, sizeof(data));
@@ -43,22 +43,24 @@ static void st7789_caset(const render_context_t* a_ctx, uint16_t a_xs, uint16_t 
 static void st7789_raset(const render_context_t* a_ctx, uint16_t a_ys, uint16_t a_ye)
 {
     const uint8_t data[] = {
-        a_ys >> 8,
-        a_ys & 0xff,
-        a_ye >> 8,
-        a_ye & 0xff
+        (a_ys + a_ctx->y_offset) >> 8,
+        (a_ys + a_ctx->y_offset) & 0xff,
+        (a_ye + a_ctx->y_offset) >> 8,
+        (a_ye + a_ctx->y_offset) & 0xff
     };
     st7789_send_cmd(a_ctx, 0x2b);
     st7789_send_data(a_ctx, data, sizeof(data));
 }
 
-void st7789_init(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a_mhz)
+void st7789_init(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a_x_offset, uint16_t a_y_offset, uint16_t a_mhz)
 {
     a_ctx->width = a_w;
     a_ctx->height = a_h;
+    a_ctx->x_offset = a_x_offset;
+    a_ctx->y_offset = a_y_offset;
     a_ctx->pixel_size = 8; // in bits, maybe 16
     a_ctx->mhz = a_mhz;
- 
+
     a_ctx->spi.pin_clk = 18;
     a_ctx->spi.pin_din = 19;
     a_ctx->spi.pin_dc = 20;
@@ -89,6 +91,10 @@ void st7789_init(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a
 
     st7789_send_cmd(a_ctx, 0x3A);                // COLMOD
     st7789_send_data(a_ctx, (uint8_t[]){ 0x55 }, 1); // 16bit RGB565
+    sleep_ms(10);
+
+    st7789_send_cmd(a_ctx, 0x36);                     // MADCTL
+    st7789_send_data(a_ctx, (uint8_t[]){ 0x00 }, 1);  // normal orientation
     sleep_ms(10);
 
     st7789_send_cmd(a_ctx, 0x21); sleep_ms(150);  // INVON
