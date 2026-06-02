@@ -141,17 +141,47 @@ void st7789_draw_rect(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint1
 
 void st7789_draw_8x16glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_color, uint16_t a_x, uint16_t a_y)
 {
-
+    int glyph_w = 8 * a_scale;
+    int glyph_h = 16 * a_scale;
+    for (int i = 0; i < a_len; i++)
+    {
+        const uint8_t* glyph = font8x16_glyph(a_str[i]);
+        int x_offset = i * (glyph_w + a_spacing);
+        for (int y = 0; y < glyph_h; y++)
+        {
+            uint8_t bits = glyph[y / a_scale];
+            for (int x = 0; x < glyph_w; x++)
+            {
+                uint16_t color = (bits & (1 << (7 - x / a_scale))) ? a_color : 0x0000;
+                st7789_draw_pixel(a_ctx, a_x + x + x_offset, a_y + y, color);
+            }
+        }
+    }
 }
 
 void st7789_draw_4x8glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_color, uint16_t a_x, uint16_t a_y)
 {
-
+    int glyph_w = 4 * a_scale;
+    int glyph_h = 8 * a_scale;
+    for (int i = 0; i < a_len; i++)
+    {
+        const uint8_t* glyph = font4x8_glyph(a_str[i]);
+        int x_offset = i * (glyph_w + a_spacing);
+        for (int x = 0; x < glyph_w; x++)
+        {
+            uint8_t bits = glyph[x / a_scale];
+            for (int y  = 0; y < glyph_h; y++)
+            {
+                uint16_t color = (bits & (1 << (7 - y / a_scale))) ? a_color : 0x0000;
+                st7789_draw_pixel(a_ctx, a_x + x + x_offset, a_y + y, color);
+            }
+        }
+    }
 }
 
 void st7789_flush(render_context_t* a_ctx)
 {
-  if (a_ctx->buffer_offset == 0) return;
+    if (a_ctx->buffer_offset == 0) return;
 
     uint8_t cmd = 0x2C;
     spi_set_format(a_ctx->spi.spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);

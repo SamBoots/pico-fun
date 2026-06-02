@@ -17,6 +17,7 @@ int render_4x8glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len,
 int render_8x16glyphs_2x2border(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_color, uint16_t a_x, uint16_t a_y);
 int render_4x8glyphs_2x2border(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_color, uint16_t a_x, uint16_t a_y);
 int render_draw_rect(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16_t a_w, uint16_t a_h, uint16_t a_color);
+int render_fill(render_context_t* a_ctx, uint16_t a_color);
 int render_flush(render_context_t* a_ctx);
 
 #endif // RENDERER_H
