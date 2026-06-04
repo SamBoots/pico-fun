@@ -178,6 +178,8 @@ bool tetris_update(app_context_t* a_app, uint32_t a_now_ms)
     tetris_context_t* tetris_ctx = (tetris_context_t*)a_app->user_data;
     if ((uint32_t)(a_now_ms - tetris_ctx->ms_last_frame) > tetris_ctx->ms_per_frame)
     {
+        tetris_ctx->ms_last_frame = a_now_ms;
+
         button_update(&tetris_ctx->left_button, a_now_ms);
         button_update(&tetris_ctx->right_button, a_now_ms);
         button_update(&tetris_ctx->rotate_button, a_now_ms);
@@ -214,26 +216,21 @@ bool tetris_update(app_context_t* a_app, uint32_t a_now_ms)
             tetris_piece_die(tetris_ctx);
         }
 
-        if (a_now_ms - tetris_ctx->ms_last_frame > tetris_ctx->ms_per_frame)
+        if (tetris_can_move(tetris_ctx, tetris_ctx->current_loc_x, tetris_ctx->current_loc_y + 1, tetris_ctx->current_pose))
         {
-            tetris_ctx->ms_last_frame = a_now_ms;
-
-            if (tetris_can_move(tetris_ctx, tetris_ctx->current_loc_x, tetris_ctx->current_loc_y + 1, tetris_ctx->current_pose))
-            {
-                tetris_ctx->current_loc_y++;
-            }
-            else
-            {
-                tetris_piece_die(tetris_ctx);
-            }
+            tetris_ctx->current_loc_y++;
         }
+        else
+        {
+            tetris_piece_die(tetris_ctx);
+        }
+        return true;
     }
-    return true;
+    return false;
 }
 
 void tetris_render(app_context_t* a_app, render_context_t* a_ctx)
 {
-    render_draw_rect(a_ctx, 0, 0, a_ctx->width, a_ctx->height, 0);
     tetris_context_t* tetris_ctx = (tetris_context_t*)a_app->user_data;
     for (int x = 0; x < tetris_ctx->map_x * tetris_ctx->map_scale; x++)
     {
