@@ -173,7 +173,6 @@ bool snake_update(app_context_t* a_app, uint32_t a_now_ms)
 
 void snake_render(app_context_t* a_app, render_context_t* a_ctx)
 {
-    render_fill(a_ctx, COLOR_BLACK);
     snake_context_t* snake_ctx = (snake_context_t*)a_app->user_data;
     for (int x = 0; x < snake_ctx->map_x * snake_ctx->map_scale; x++)
     {

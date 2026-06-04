@@ -36,15 +36,14 @@ static inline bool gun_reload(gun_context_t* a_gun_ctx)
 
 static void gun_update_screen(gun_context_t* a_gun_ctx, render_context_t* a_ctx)
 {
-    render_fill(a_ctx, COLOR_BLACK);
     char digits[] = {'0', '0'};
     if (a_gun_ctx->current_ammo)
     {
         digits[0] = '0' + (a_gun_ctx->current_ammo / 10);
         digits[1] = '0' + (a_gun_ctx->current_ammo % 10);
     }
-    uint16_t scale = MIN(a_ctx->width / 10, a_ctx->height / 18);
-    render_8x16glyphs_2x2border(a_ctx, digits, 2, 1, scale, COLOR_RED, 0, 0);
+    uint16_t scale = 12;
+    render_8x16glyphs(a_ctx, digits, 2, 1, scale, COLOR_RED, COLOR_BLACK, 0, 0);
     render_flush(a_ctx);
 }
 

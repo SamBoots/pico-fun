@@ -85,7 +85,7 @@ void ssd1306_draw_rect(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint
     }
 }
 
-void ssd1306_draw_8x16glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_color, uint16_t a_x, uint16_t a_y)
+void ssd1306_draw_8x16glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_front_color, uint16_t a_back_color, uint16_t a_x, uint16_t a_y)
 {
     int glyph_w = 8 * a_scale;
     int glyph_h = 16 * a_scale;
@@ -98,14 +98,14 @@ void ssd1306_draw_8x16glyphs(render_context_t* a_ctx, const char* a_str, uint16_
             uint8_t bits = glyph[y / a_scale];
             for (int x = 0; x < glyph_w; x++)
             {
-                uint16_t color = (bits & (1 << (7 - x / a_scale))) ? a_color : 0x0000;
+                uint16_t color = (bits & (1 << (7 - x / a_scale))) ? a_front_color : a_back_color;
                 ssd1306_draw_pixel(a_ctx, a_x + x + x_offset, a_y + y, color);
             }
         }
     }
 }
 
-void ssd1306_draw_4x8glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_color, uint16_t a_x, uint16_t a_y)
+void ssd1306_draw_4x8glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_front_color, uint16_t a_back_color, uint16_t a_x, uint16_t a_y)
 {
     int glyph_w = 4 * a_scale;
     int glyph_h = 8 * a_scale;
@@ -118,7 +118,7 @@ void ssd1306_draw_4x8glyphs(render_context_t* a_ctx, const char* a_str, uint16_t
             uint8_t bits = glyph[x / a_scale];
             for (int y  = 0; y < glyph_h; y++)
             {
-                uint16_t color = (bits & (1 << (7 - y / a_scale))) ? a_color : 0x0000;
+                uint16_t color = (bits & (1 << (7 - y / a_scale))) ? a_front_color : a_back_color;
                 ssd1306_draw_pixel(a_ctx, a_x + x + x_offset, a_y + y, color);
             }
         }
