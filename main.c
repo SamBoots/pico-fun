@@ -13,6 +13,7 @@
 #include "app/app.h"
 #include "app/ammo_counter.h"
 #include "app/snake.h"
+#include "app/pwm_test.h"
 
 #include "stdio.h"
 
@@ -48,6 +49,7 @@ bool get_delay_bool_value(delay_bool_t* a_bool, uint32_t a_now_ms)
 // add all apps you want to use here
 app_init_t app_inits[] =
 {
+    pwm_test_init_app,
     ammo_counter_init_app,
     snake_init_app
 };
