@@ -40,6 +40,7 @@ main.c
 app/ammo_counter.c
 app/snake.c
 app/pwm_test.c
+app/app_select.c
 memory/memory_arena.c
 graphics/renderer.c
 graphics/drivers/st7789.c

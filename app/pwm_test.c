@@ -15,7 +15,7 @@ typedef struct pwm_test_context_t
 // simple sine wave tone, 4000 samples at 8000Hz = 0.5 seconds
 static uint8_t s_tone[4000];
 
-void pwm_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx)
+void pwm_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, void* a_app_params)
 {
     a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
     a_app->user_data = memory_arena_allocate(a_arena, sizeof(pwm_test_context_t));
@@ -31,7 +31,7 @@ void pwm_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_con
     pwm_audio_play(&app_ctx->pwm, s_tone, sizeof(s_tone));
 }
 
-bool pwm_test_update(app_context_t* a_app, uint32_t a_now_ms)
+app_update_status_t pwm_test_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
 {
     pwm_test_context_t* app_ctx = (pwm_test_context_t*)a_app->user_data;
     if (!pwm_is_playing(&app_ctx->pwm))
@@ -40,7 +40,7 @@ bool pwm_test_update(app_context_t* a_app, uint32_t a_now_ms)
     }
 
     // never render
-    return false;
+    return APP_OK;
 }
 
 void pwm_test_render(app_context_t* a_app, render_context_t* a_ctx)

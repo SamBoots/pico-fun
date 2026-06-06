@@ -107,8 +107,10 @@ static void snake_start_game(snake_context_t* a_snake_ctx)
     snake_place_apple(a_snake_ctx);
 }
 
-void snake_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx)
+void snake_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, void* a_app_params)
 {
+    snake_params_t* params = (snake_params_t*)a_app_params;
+
     a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
     a_app->user_data = memory_arena_allocate(a_arena, sizeof(snake_context_t));
     a_app->update = snake_update;
@@ -119,7 +121,7 @@ void snake_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_contex
     snake_ctx->ms_last_frame = 0;
     snake_ctx->ms_per_frame = 250;
 
-    snake_ctx->map_scale = 8;
+    snake_ctx->map_scale = params->scale;
     snake_ctx->map_x = a_ctx->width / snake_ctx->map_scale;
     snake_ctx->map_y = a_ctx->height / snake_ctx->map_scale;
     snake_ctx->map = memory_arena_allocate(a_arena, (snake_ctx->map_x * snake_ctx->map_y + 7) / 8);
@@ -132,7 +134,7 @@ void snake_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_contex
     snake_start_game(snake_ctx);
 }
 
-bool snake_update(app_context_t* a_app, uint32_t a_now_ms)
+app_update_status_t snake_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
 {
     snake_context_t* snake_ctx = (snake_context_t*)a_app->user_data;
     if ((uint32_t)(a_now_ms - snake_ctx->ms_last_frame) > snake_ctx->ms_per_frame)
@@ -167,8 +169,9 @@ bool snake_update(app_context_t* a_app, uint32_t a_now_ms)
 
         if (!snake_move(snake_ctx))
             snake_start_game(snake_ctx);
+        return APP_RENDER;
     }
-    return true;
+    return APP_OK;
 }
 
 void snake_render(app_context_t* a_app, render_context_t* a_ctx)

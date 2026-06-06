@@ -11,9 +11,7 @@
 #include "memory/memory_arena.h"
 
 #include "app/app.h"
-#include "app/ammo_counter.h"
-#include "app/snake.h"
-#include "app/pwm_test.h"
+#include "app/app_select.h"
 
 #include "stdio.h"
 
@@ -46,15 +44,7 @@ bool get_delay_bool_value(delay_bool_t* a_bool, uint32_t a_now_ms)
     return a_bool->value;
 }
 
-// add all apps you want to use here
-app_init_t app_inits[] =
-{
-    pwm_test_init_app,
-    ammo_counter_init_app,
-    snake_init_app
-};
-
-void switch_app(app_context_t* a_app, void (*a_init)(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx))
+void switch_app(app_context_t* a_app, app_init_t a_init, void* a_params)
 {
     if (a_app->close)
     {
@@ -62,7 +52,7 @@ void switch_app(app_context_t* a_app, void (*a_init)(app_context_t* a_app, memor
         memory_arena_set_marker(&g_memory_arena, a_app->memory_arena_marker);
     }
     memory_set(a_app, 0, sizeof(a_app));
-    a_init(a_app, &g_memory_arena, &g_render_ctx);
+    a_init(a_app, &g_memory_arena, &g_render_ctx, a_params);
 }
 
 int main(void)
@@ -71,36 +61,41 @@ int main(void)
 
     uint32_t load_new_app_ms = 5000;
     uint32_t last_app_loaded = load_new_app_ms;
-    uint16_t current_app = 0;
 
     render_load_func(&g_render_ctx, DRIVER_ST7789);
-    render_init_context(&g_render_ctx, TEST_W, TEST_H, 0, 20, 100 * 1000);
+    render_init_context(&g_render_ctx, TEST_W, TEST_H, 0, 20, 10 * 1000);
     app_context_t app;
     memory_set(&app, 0, sizeof(app));
-
-    button_context_t switch_app_button;
-    button_init_context(&switch_app_button, 2, 30);
-    switch_app(&app, app_inits[current_app++]);
+    switch_app(&app, app_select_init_app, NULL);
 
     delay_bool_t led_bool = create_delay_bool_value(500, false);
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
 
+    button_context_t exit_app;
+    button_init_context(&exit_app, 13, 10);
+
+
     while (true)
     {
         uint32_t now_ms = to_ms_since_boot(get_absolute_time());
-        button_update(&switch_app_button, now_ms);
-        if (button_pressed(&switch_app_button))
+        button_update(&exit_app, now_ms);
+
+        if (button_pressed(&exit_app))
         {
-            printf("new app loaded");
-            switch_app(&app, app_inits[current_app++]);
-            last_app_loaded = now_ms;
-            if (current_app >= sizeof(app_inits) / sizeof(app_init_t))
-                current_app = 0;
+            switch_app(&app, app_select_init_app, NULL);
         }
-        
-        if (app.update(&app, now_ms))
+
+        app_update_status_t update_status = app.update(&app, &g_memory_arena, &g_render_ctx, now_ms);
+        switch (update_status)
+        {
+        case APP_RENDER:
             app.render(&app, &g_render_ctx);
+            break;
+        case APP_EXIT:
+            switch_app(&app, app_select_init_app, NULL);
+            break;
+        }
 
         gpio_put(PICO_DEFAULT_LED_PIN, get_delay_bool_value(&led_bool, now_ms));
     }

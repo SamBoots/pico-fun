@@ -47,7 +47,7 @@ static void gun_update_screen(gun_context_t* a_gun_ctx, render_context_t* a_ctx)
     render_flush(a_ctx);
 }
 
-void ammo_counter_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx)
+void ammo_counter_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, void* a_app_params)
 {
     a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
     a_app->user_data = memory_arena_allocate(a_arena, sizeof(gun_context_t));
@@ -69,7 +69,7 @@ void ammo_counter_init_app(app_context_t* a_app, memory_arena_t* a_arena, render
     gun_update_screen(gun_ctx, a_ctx);
 }
 
-bool ammo_counter_update(app_context_t* a_app, uint32_t a_now_ms)
+app_update_status_t ammo_counter_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
 {
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
     button_update(&gun_ctx->fire_button, a_now_ms);
@@ -77,15 +77,15 @@ bool ammo_counter_update(app_context_t* a_app, uint32_t a_now_ms)
     if (button_pressed(&gun_ctx->fire_button))
     {
         if (gun_fire(gun_ctx, a_now_ms))
-            return true;
+            return APP_RENDER;
     }
 
     if (button_pressed(&gun_ctx->reload_button))
     {
         if (gun_reload(gun_ctx))
-            return true;
+            return APP_RENDER;
     }
-    return false;
+    return APP_OK;
 }
 
 void ammo_counter_render(app_context_t* a_app, render_context_t* a_ctx)
