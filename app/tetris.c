@@ -74,7 +74,7 @@ static bool tetris_can_move(tetris_context_t* a_tetris_ctx, uint16_t new_x, uint
                 return false;
             }
             
-            uint32_t index = pixel_y + a_tetris_ctx->map_x * pixel_x;
+            uint32_t index = pixel_y * a_tetris_ctx->map_x + pixel_x;
             if (tetris_read_tile(a_tetris_ctx, index))
             {
                 return false;
@@ -135,7 +135,7 @@ static void tetris_piece_die(tetris_context_t* a_tetris_ctx)
         {
             uint16_t pixel_x = a_tetris_ctx->current_loc_x + (i % 4);
             uint16_t pixel_y = a_tetris_ctx->current_loc_y + (i / 4);
-            uint32_t index = pixel_y + a_tetris_ctx->map_x * pixel_x;
+            uint32_t index = pixel_y * a_tetris_ctx->map_x + pixel_x;
             tetris_set_tile(a_tetris_ctx, index, true);
         }
     }
@@ -246,6 +246,26 @@ void tetris_render(app_context_t* a_app, render_context_t* a_ctx)
             }  
         }
     }
+
+    uint16_t piece = pieces[tetris_ctx->current_piece][tetris_ctx->current_pose];
+    for (int i = 0; i < 16; i++)
+    {
+        if ((piece >> (15 - i)) & 1)
+        {
+            uint16_t tile_x = tetris_ctx->current_loc_x + (i % 4);
+            uint16_t tile_y = tetris_ctx->current_loc_y + (i / 4);
+            for (int x = 0; x < tetris_ctx->map_scale; x++)
+            {
+                for (int y = 0; y < tetris_ctx->map_scale; y++)
+                {
+                    uint16_t pixel_x = (tile_x * tetris_ctx->map_scale) + x;
+                    uint16_t pixel_y = (tile_y * tetris_ctx->map_scale) + y;
+                    render_draw_pixel(a_ctx, pixel_x, pixel_y, 255);
+                }
+            }
+        }
+    }
+
     render_flush(a_ctx);
 }
 
