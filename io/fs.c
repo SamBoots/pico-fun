@@ -1,7 +1,7 @@
 #include <stdlib.h>
+#include "fs.h"
 #include "pico/stdlib.h"
 #include "pico/flash.h"
-#include "fs.h"
 #include "string.h"
 
 #define FS_FLASH_BASE 0x10000000
@@ -27,8 +27,8 @@ static fs_entry_t* fs_find_entry(const char* a_name)
 {
     for (size_t i = 0; i < s_fs.entry_count; i++)
     {
-        if (strncmp(s_fs.entry[i].name, a_name, FS_MAX_NAME_LEN) == 0)
-            return &s_fs.entry[i];
+        if (strncmp(s_fs.entries[i].name, a_name, FS_MAX_NAME_LEN) == 0)
+            return &s_fs.entries[i];
     }
     return NULL;
 }
@@ -65,7 +65,7 @@ bool fs_write(const char* a_name, size_t a_name_len, const void* a_buf, size_t a
     fs_entry_t* entry = fs_find_entry(a_name);
     if (entry == NULL)
     {
-        entry = s_fs.entries[s_fs.entry_count++];
+        entry = &s_fs.entries[s_fs.entry_count++];
         memcpy(entry->name, a_name, a_name_len);
         entry->offset = (FS_DATA_START + FS_INDEX_OFFSET * (s_fs.entry_count - 1));
         return true;
@@ -80,7 +80,6 @@ bool fs_write(const char* a_name, size_t a_name_len, const void* a_buf, size_t a
     flash_range_erase(entry->offset, FLASH_SECTOR_SIZE);
     flash_range_program(entry->offset, page, FLASH_PAGE_SIZE);
     restore_interupts(interupts);
-
 
     fs_flush_index();
     return true;
