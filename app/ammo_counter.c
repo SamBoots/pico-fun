@@ -47,8 +47,9 @@ static void gun_update_screen(gun_context_t* a_gun_ctx, render_context_t* a_ctx)
     render_flush(a_ctx);
 }
 
-void ammo_counter_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, void* a_app_params)
+void ammo_counter_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
 {
+    const ammo_counter_params_t* params = (const ammo_counter_params_t*)a_app_params;
     a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
     a_app->user_data = memory_arena_allocate(a_arena, sizeof(gun_context_t));
     a_app->update = ammo_counter_update;
@@ -57,8 +58,8 @@ void ammo_counter_init_app(app_context_t* a_app, memory_arena_t* a_arena, render
     
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
 
-    gun_ctx->max_ammo = 10;
-    gun_ctx->current_ammo = 42;
+    gun_ctx->max_ammo = params->max_ammo;
+    gun_ctx->current_ammo = params->max_ammo;
     gun_ctx->fire_rate_ms = 80;
     gun_ctx->last_shot_ms = 0;
 

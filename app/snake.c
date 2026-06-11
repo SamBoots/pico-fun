@@ -107,9 +107,9 @@ static void snake_start_game(snake_context_t* a_snake_ctx)
     snake_place_apple(a_snake_ctx);
 }
 
-void snake_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, void* a_app_params)
+void snake_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
 {
-    snake_params_t* params = (snake_params_t*)a_app_params;
+    const snake_params_t* params = (const snake_params_t*)a_app_params;
 
     a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
     a_app->user_data = memory_arena_allocate(a_arena, sizeof(snake_context_t));

@@ -15,7 +15,7 @@ typedef struct pwm_test_context_t
 // simple sine wave tone, 4000 samples at 8000Hz = 0.5 seconds
 static uint8_t s_tone[4000];
 
-void pwm_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, void* a_app_params)
+void pwm_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
 {
     a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
     a_app->user_data = memory_arena_allocate(a_arena, sizeof(pwm_test_context_t));
