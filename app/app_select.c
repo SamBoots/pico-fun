@@ -4,6 +4,7 @@
 #include "ammo_counter.h"
 #include "snake.h"
 #include "pwm_test.h"
+#include "nfc_test.h"
 #include "../io/io_types.h"
 #include "../io/button.h"
 #include "../io/fs.h"
@@ -74,15 +75,22 @@ static const app_param_descriptor_t pwm_test_descriptors[] =
     APP_PARAM("pad", PARAM_U8, offsetof(pwm_test_params_t, pad), 1, 17)
 };
 
+static const app_param_descriptor_t nfc_test_descriptors[] = 
+{
+    APP_PARAM("pad", PARAM_U8, offsetof(nfc_test_params_t, pad), 1, 17)
+};
+
 static const ammo_counter_params_t ammo_counter_defaults = { .max_ammo = 42, .scale = 2 };
 static const snake_params_t  snake_defaults  = { .scale = 4 };
 static const pwm_test_params_t pwm_test_defaults = { .pad = 0 };
+static const nfc_test_params_t nfc_test_defaults = { .pad = 0 };
 
 static app_descriptor_t s_app_registery[] = 
 {
     APP_ENTRY("ammo", ammo_counter),
     APP_ENTRY("snake", snake),
-    APP_ENTRY("pwm", pwm_test)
+    APP_ENTRY("pwm", pwm_test),
+    APP_ENTRY("nfc", nfc_test)
 };
 static const uint8_t s_app_count = ARRAY_LENGTH(s_app_registery);
 

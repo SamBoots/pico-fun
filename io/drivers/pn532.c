@@ -1,8 +1,9 @@
 #include <stdlib.h>
 #include "pico/stdlib.h"
 #include "hardware/i2c.h"
-#include "pm532.h"
+#include "pn532.h"
 #include "../nfc.h"
+#include "string.h"
 
 #define PN532_I2C_ADDRESS 0x24
 
@@ -36,12 +37,12 @@ static uint8_t calc_dcs(const uint8_t* a_data, size_t a_len)
 
 static void pn532_write_raw(const nfc_context_t* a_ctx, const uint8_t* a_buf, size_t a_len)
 {
-    i2c_write_blocking(a_ctx->i2c.i2c, a_ctx->i2c.address, a_buf, a_len, false);
+    i2c_write_blocking(a_ctx->i2c, a_ctx->address, a_buf, a_len, false);
 }
 
 static void pn532_read_raw(const nfc_context_t* a_ctx, uint8_t* a_buf, size_t a_len)
 {
-    i2c_read_blocking(a_ctx->i2c.i2c, a_ctx->i2c.address, a_buf, a_len, false);
+    i2c_read_blocking(a_ctx->i2c, a_ctx->address, a_buf, a_len, false);
 }
 
 static bool pn532_wait_ready(const nfc_context_t* a_ctx)
@@ -140,7 +141,14 @@ bool pn532_init(nfc_context_t* a_ctx, nfc_init_info_t* a_init_info)
     gpio_pull_up(a_ctx->pin_sda);
     gpio_pull_up(a_ctx->pin_scl);
 
-    sleep_ms(100);
+    sleep_ms(500);
+
+    uint8_t buf;
+    int ret = i2c_read_blocking(a_ctx->i2c, PN532_I2C_ADDR, &buf, 1, false);
+    if (ret < 0) {
+        // nothing at 0x24 — wiring or address issue
+        return false;
+    }
 
     return pn532_sam_config(a_ctx);
 }
@@ -203,7 +211,7 @@ bool pn532_write(const nfc_context_t* a_ctx, uint8_t a_offset, const void* a_dat
     return true;
 }
 
-static bool pn532_detect_tag(const nfc_context_t* a_ctx)
+bool pn532_detect_tag(const nfc_context_t* a_ctx)
 {
     uint8_t cmd[] = {
         PN532_CMD_INLISTPASSIVETARGET,
