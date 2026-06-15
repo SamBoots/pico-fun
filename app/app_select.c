@@ -87,10 +87,10 @@ static const nfc_test_params_t nfc_test_defaults = { .pad = 0 };
 
 static app_descriptor_t s_app_registery[] = 
 {
-    APP_ENTRY("ammo", ammo_counter),
-    APP_ENTRY("snake", snake),
     APP_ENTRY("pwm", pwm_test),
-    APP_ENTRY("nfc", nfc_test)
+    APP_ENTRY("nfc", nfc_test),
+    APP_ENTRY("ammo", ammo_counter),
+    APP_ENTRY("snake", snake)
 };
 static const uint8_t s_app_count = ARRAY_LENGTH(s_app_registery);
 

@@ -24,7 +24,7 @@ void pwm_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_con
     a_app->close = pwm_test_close;
     
     pwm_test_context_t* app_ctx = (pwm_test_context_t*)a_app->user_data;
-    pwm_init_context(&app_ctx->pwm, 13);
+    pwm_init_context(&app_ctx->pwm, 6);
 
     for (int i = 0; i < 4000; i++)
         s_tone[i] = (uint8_t)(128 + 127 * sinf(2.0f * 3.14159f * 440.0f * i / 8000.0f));

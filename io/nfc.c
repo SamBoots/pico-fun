@@ -12,6 +12,7 @@ bool nfc_init(nfc_context_t* a_ctx, nfc_init_info_t* a_connect_type, nfc_driver_
         return pn532_init(a_ctx, a_connect_type);
         break;
     }
+    return false;
 }
 
 bool nfc_read(const nfc_context_t* a_ctx, uint8_t a_offset, void* a_data, uint32_t a_len)

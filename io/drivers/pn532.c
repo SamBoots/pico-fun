@@ -7,8 +7,6 @@
 
 #define PN532_I2C_ADDRESS 0x24
 
-#define PN532_I2C_ADDR    0x24
-
 #define PN532_CMD_SAMCONFIGURATION    0x14
 #define PN532_CMD_INLISTPASSIVETARGET 0x4A
 #define PN532_CMD_INDATAEXCHANGE      0x40
@@ -135,7 +133,7 @@ bool pn532_init(nfc_context_t* a_ctx, nfc_init_info_t* a_init_info)
     a_ctx->write = pn532_write;
     a_ctx->detect_tag = pn532_detect_tag;
 
-    i2c_init(a_ctx->i2c, 400000);
+    i2c_init(a_ctx->i2c, 100000);
     gpio_set_function(a_ctx->pin_sda, GPIO_FUNC_I2C);
     gpio_set_function(a_ctx->pin_scl, GPIO_FUNC_I2C);
     gpio_pull_up(a_ctx->pin_sda);
@@ -143,14 +141,23 @@ bool pn532_init(nfc_context_t* a_ctx, nfc_init_info_t* a_init_info)
 
     sleep_ms(500);
 
-    uint8_t buf;
-    int ret = i2c_read_blocking(a_ctx->i2c, PN532_I2C_ADDR, &buf, 1, false);
-    if (ret < 0) {
-        // nothing at 0x24 — wiring or address issue
-        return false;
+    bool found = false;
+    for (uint8_t addr = 0x08; addr < 0x78; addr++) {
+        uint8_t buf;
+        int ret = i2c_read_blocking(a_ctx->i2c, addr, &buf, 1, false);
+        if (ret >= 0) {
+            found = true;
+            // blink LED to signal address found
+            // fast blink = something found
+            for (int i = 0; i < 10; i++) {
+                gpio_put(25, 1); sleep_ms(100);
+                gpio_put(25, 0); sleep_ms(100);
+            }
+            sleep_ms(1000);
+        }
     }
 
-    return pn532_sam_config(a_ctx);
+    return found && pn532_sam_config(a_ctx);
 }
 
 bool pn532_read(const nfc_context_t* a_ctx, uint8_t a_offset, void* a_data, uint32_t a_len)
