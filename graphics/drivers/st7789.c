@@ -72,7 +72,7 @@ void st7789_init(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a
     a_ctx->height = a_h;
     a_ctx->x_offset = a_x_offset;
     a_ctx->y_offset = a_y_offset;
-    a_ctx->pixel_size = 8; // in bits, maybe 16
+    a_ctx->pixel_size = 16; // in bits
     a_ctx->mhz = a_mhz;
 
     a_ctx->spi.pin_clk = 18;
@@ -116,6 +116,15 @@ void st7789_init(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a
 
     gpio_put(a_ctx->spi.pin_bl, 1);           // backlight on
     st7789_draw_rect(a_ctx, 0, 0, a_ctx->width, a_ctx->height, 0);
+
+    // setup DMA
+    a_ctx->dma_chan = dma_claim_unused_channel(true);
+    a_ctx->dma_cfg = dma_channel_get_default_config(a_ctx->dma_chan);
+
+    channel_config_set_transfer_data_size(&a_ctx->dma_cfg, DMA_SIZE_16);
+    channel_config_set_dreq(&a_ctx->dma_cfg, spi_get_dreq(a_ctx->spi.spi, true));
+    channel_config_set_read_increment(&a_ctx->dma_cfg, true);
+    channel_config_set_write_increment(&a_ctx->dma_cfg, false);
 }
 
 void st7789_draw_pixel(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16_t a_color)
