@@ -1,8 +1,10 @@
 #include <stdlib.h>
-#include "fs.h"
 #include "pico/stdlib.h"
 #include "pico/flash.h"
+#include "hardware/flash.h"
+#include "hardware/sync.h"
 #include "string.h"
+#include "fs.h"
 
 #define FS_FLASH_BASE 0x10000000
 #define FS_INDEX_OFFSET (1 * 1024 * 1024) // mb
@@ -73,7 +75,7 @@ static void fs_flush_index(void)
     uint32_t interupts = save_and_disable_interrupts();
     flash_range_erase(FS_INDEX_OFFSET, FLASH_SECTOR_SIZE);
     flash_range_program(FS_INDEX_OFFSET, sec, FLASH_SECTOR_SIZE);
-    restore_interupts(interupts);
+    restore_interrupts(interupts);
 }
 
 bool fs_write(const char* a_name, size_t a_name_len, const void* a_buf, size_t a_buf_len)
@@ -97,7 +99,7 @@ bool fs_write(const char* a_name, size_t a_name_len, const void* a_buf, size_t a
     uint32_t interupts = save_and_disable_interrupts();
     flash_range_erase(entry->offset, FLASH_SECTOR_SIZE);
     flash_range_program(entry->offset, page, FLASH_PAGE_SIZE);
-    restore_interupts(interupts);
+    restore_interrupts(interupts);
 
     fs_flush_index();
     return true;

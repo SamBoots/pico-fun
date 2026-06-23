@@ -15,6 +15,6 @@ typedef struct app_context_t
     void (*close)(struct app_context_t* a_app);
 } app_context_t;
 
-typedef void (*app_init_t)(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, void* a_app_params);
+typedef void (*app_init_t)(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params);
 
 #endif // APP_H

@@ -4,6 +4,7 @@
 #include "ammo_counter.h"
 #include "snake.h"
 #include "pwm_test.h"
+#include "nfc_test.h"
 #include "../io/io_types.h"
 #include "../io/button.h"
 #include "../io/fs.h"
@@ -11,9 +12,10 @@
 #include "../graphics/render_types.h"
 #include "../graphics/renderer.h"
 #include "math.h"
+#include "string.h"
 
 typedef enum { PARAM_U16, PARAM_U8, PARAM_BOOL } param_type_t;
-typedef enum { CURSOR_TYPE_APP, CURSOR_TYPE_PARAM } cursor_type_t;
+typedef enum { CURSOR_TYPE_APP = 0, CURSOR_TYPE_PARAM = 1, CURSOR_TYPE_PARAM_VAL = 2, CURSOR_TYPE_MAX = 3 } cursor_type_t;
 
 typedef struct app_param_descriptor_t
 {
@@ -59,29 +61,36 @@ typedef struct app_descriptor_t
 
 static const app_param_descriptor_t ammo_counter_descriptors[] = 
 {
-    APP_PARAM("max_ammo", PARAM_U8, offsetof(ammo_counter_params_t, max_ammo), 1, 99),
+    APP_PARAM("maxammo", PARAM_U8, offsetof(ammo_counter_params_t, max_ammo), 1, 99),
     APP_PARAM("scale", PARAM_U8, offsetof(ammo_counter_params_t, scale), 1, 16)
 };
 
 static const app_param_descriptor_t snake_descriptors[] = 
 {
-    APP_PARAM("scale", PARAM_U8, offsetof(snake_params_t, scale), 1, 16)
+    APP_PARAM("scale", PARAM_U8, offsetof(snake_params_t, scale), 1, 17)
 };
 
 static const app_param_descriptor_t pwm_test_descriptors[] = 
 {
-    APP_PARAM("pad", PARAM_U8, offsetof(pwm_test_params_t, pad), 1, 16)
+    APP_PARAM("pad", PARAM_U8, offsetof(pwm_test_params_t, pad), 1, 17)
+};
+
+static const app_param_descriptor_t nfc_test_descriptors[] = 
+{
+    APP_PARAM("pad", PARAM_U8, offsetof(nfc_test_params_t, pad), 1, 17)
 };
 
 static const ammo_counter_params_t ammo_counter_defaults = { .max_ammo = 42, .scale = 2 };
-static const snake_params_t  snake_defaults  = { .scale = 8 };
+static const snake_params_t  snake_defaults  = { .scale = 4 };
 static const pwm_test_params_t pwm_test_defaults = { .pad = 0 };
+static const nfc_test_params_t nfc_test_defaults = { .pad = 0 };
 
 static app_descriptor_t s_app_registery[] = 
 {
     APP_ENTRY("ammo", ammo_counter),
     APP_ENTRY("snake", snake),
-    APP_ENTRY("pwm", pwm_test)
+    APP_ENTRY("pwm", pwm_test),
+    APP_ENTRY("nfc", nfc_test)
 };
 static const uint8_t s_app_count = ARRAY_LENGTH(s_app_registery);
 
@@ -100,6 +109,22 @@ typedef struct app_select_context_t
     uint8_t param_buf[64];
 } app_select_context_t;
 
+static inline void* move_pointer(const void* a_ptr, size_t a_move)
+{
+    return (void*)((const unsigned char*)a_ptr + a_move);
+}
+
+static inline int wrap(int a_val, int a_max) 
+{
+    return ((a_val % a_max) + a_max) % a_max;
+}
+
+static inline int wrapminmax(int a_val, int a_min, int a_max) 
+{
+    int range = a_max - a_min;
+    return ((((a_val - a_min) % range) + range) % range) + a_min;
+}
+
 static inline const app_descriptor_t* GetAppCursor(app_select_context_t* a_app_select)
 {
     return &s_app_registery[a_app_select->cursor_app];
@@ -110,48 +135,47 @@ static inline const app_param_descriptor_t* GetParamCursor(app_select_context_t*
     return &s_app_registery[a_app_select->cursor_app].descriptors[a_app_select->cursor_param];
 }
 
-static inline const uint16_t GetU16Param(const app_param_descriptor_t* a_app, const app_descriptor_t* a_cursor)
+static inline const uint16_t get_u16_param(const app_param_descriptor_t* a_desc, void* a_data)
 {
-    const uint8_t* params = (const uint8_t*)a_cursor->params;
-    return (*(uint16_t*)params[a_app->byte_offset]);
+    return *(uint16_t*)move_pointer(a_data, a_desc->byte_offset);
 }
 
-static inline const uint8_t GetU8Param(const app_param_descriptor_t* a_app, const app_descriptor_t* a_cursor)
+static inline const uint8_t get_u8_param(const app_param_descriptor_t* a_desc, void* a_data)
 {
-    const uint8_t* params = (const uint8_t*)a_cursor->params;
-    return params[a_app->byte_offset];
+    return *(uint8_t*)move_pointer(a_data, a_desc->byte_offset);
 }
 
-static inline const bool GetBoolParam(const app_param_descriptor_t* a_app, const app_descriptor_t* a_cursor)
+static inline const bool get_bool_param(const app_param_descriptor_t* a_desc, void* a_data)
 {
-    const uint8_t* params = (const uint8_t*)a_cursor->params;
-    return (bool)params[a_app->byte_offset];
+    return *(bool*)move_pointer(a_data, a_desc->byte_offset);
 }
 
 static inline void display_app_info(app_select_context_t* a_app_select, render_context_t* a_ctx)
 {
     const app_descriptor_t* cursor = GetAppCursor(a_app_select);
     uint16_t select_color = COLOR_GREEN;
-    if (a_app_select->cursor == CURSOR_TYPE_PARAM)
+    if (a_app_select->cursor == CURSOR_TYPE_APP)
         select_color = COLOR_RED;
-    render_fill(a_ctx, COLOR_BLACK);
-    render_8x16glyphs(a_ctx, cursor->name, cursor->name_len, 4, 3, select_color, COLOR_BLACK, 16, a_ctx->height / 1);
+    render_8x16glyphs(a_ctx, cursor->name, cursor->name_len, 4, 3, select_color, COLOR_BLACK, 16, a_ctx->height / 4 * 1);
 }
 
 static inline void display_param_info(app_select_context_t* a_app_select, render_context_t* a_ctx)
 {
     const app_descriptor_t* cursor = GetAppCursor(a_app_select);
-    app_param_descriptor_t* param = GetParamCursor(a_app_select);
-    uint16_t select_color = COLOR_GREEN;
+    const app_param_descriptor_t* param = GetParamCursor(a_app_select);
+    uint16_t param_color = COLOR_GREEN;
+    uint16_t param_val_color = COLOR_GREEN;
     if (a_app_select->cursor == CURSOR_TYPE_PARAM)
-        select_color = COLOR_RED;
-    render_fill(a_ctx, COLOR_BLACK);
-    render_8x16glyphs(a_ctx, param->label, param->label_len, 4, 3, select_color, COLOR_BLACK, 16, a_ctx->height / 2);
+        param_color = COLOR_RED;
+    else if (a_app_select->cursor == CURSOR_TYPE_PARAM_VAL)
+        param_val_color = COLOR_RED;
+
+    render_8x16glyphs(a_ctx, param->label, param->label_len, 4, 3, param_color, COLOR_BLACK, 16, a_ctx->height / 4 * 2);
     switch (param->type)
     {
     case PARAM_U16:
     {
-        const uint16_t val = GetU16Param(param, cursor);
+        const uint16_t val = get_u16_param(param, (void*)a_app_select->param_buf);
         char str[5] = {0, 0, 0, 0, 0};
         if (val)
         {
@@ -161,12 +185,12 @@ static inline void display_param_info(app_select_context_t* a_app_select, render
             str[3] = '0' + (val / 10);
             str[4] = '0' + (val % 10);
         }
-        render_8x16glyphs(a_ctx, str, 5, 4, 3, select_color, COLOR_BLACK, 16, a_ctx->height / 3);
+        render_8x16glyphs(a_ctx, str, 5, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 4 * 3);
         break;
     }
     case PARAM_U8:
     {
-        const uint8_t val = GetU8Param(param, cursor);
+        const uint8_t val = get_u8_param(param, (void*)a_app_select->param_buf);
         char str[3] = { 0, 0, 0 };
         if (val)
         {
@@ -174,29 +198,33 @@ static inline void display_param_info(app_select_context_t* a_app_select, render
             str[1] = '0' + (val / 10);
             str[2] = '0' + (val % 10);
         }
-        render_8x16glyphs(a_ctx, str, 3, 4, 3, select_color, COLOR_BLACK, 16, a_ctx->height / 3);
+        render_8x16glyphs(a_ctx, str, 3, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 4 * 3);
         break;
     }
     case PARAM_BOOL:
     {
-        if (GetBoolParam(param, cursor))
-            render_8x16glyphs(a_ctx, "true", 4, 4, 3, select_color, COLOR_BLACK, 16, a_ctx->height / 3);
+        if (get_bool_param(param, (void*)a_app_select->param_buf))
+            render_8x16glyphs(a_ctx, "true", 4, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 4 * 3);
         else
-            render_8x16glyphs(a_ctx, "false", 5, 4, 3, select_color, COLOR_BLACK, 16, a_ctx->height / 3);
+            render_8x16glyphs(a_ctx, "false", 5, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 4 * 3);
         break;
     }
     }
 }
 
-static void change_cursor(app_select_context_t* a_app_select, int a_incr)
+static inline void modify_param(void* a_data, param_type_t a_type, int a_incr, int a_min, int a_max)
 {
-    if (a_app_select->cursor == CURSOR_TYPE_APP)
+    switch (a_type)
     {
-        a_app_select->cursor = CURSOR_TYPE_PARAM;
-    }
-    else if (a_app_select->cursor == CURSOR_TYPE_PARAM)
-    {
-        a_app_select->cursor = CURSOR_TYPE_APP;
+    case PARAM_U16:
+        (*(uint16_t*)a_data) = (uint16_t)wrapminmax((*(uint16_t*)a_data) += a_incr, a_min, a_max);
+        break;
+    case PARAM_U8:
+        (*(uint8_t*)a_data) = (uint8_t)wrapminmax((*(uint8_t*)a_data) += a_incr, a_min, a_max);
+        break;
+    case PARAM_BOOL:
+        (*(bool*)a_data) = !(*(bool*)a_data);
+        break;
     }
 }
 
@@ -205,46 +233,37 @@ static void move_cursor(app_select_context_t* a_app_select, int a_incr)
     if (a_app_select->cursor == CURSOR_TYPE_APP)
     {
         int new_pos = a_app_select->cursor_app + a_incr;
-        if (new_pos == s_app_count)
-        {
-            new_pos = 0;
-        }
-        if (new_pos == -1)
-        {
-            new_pos = s_app_count - 1;
-        }
-        a_app_select->cursor_app = new_pos;
+        a_app_select->cursor_app = wrap(a_app_select->cursor_app + a_incr, s_app_count);
         const app_descriptor_t* cursor = GetAppCursor(a_app_select);
         memcpy(a_app_select->param_buf, cursor->params, cursor->params_size);
     }
     else if (a_app_select->cursor == CURSOR_TYPE_PARAM)
     {
-        const app_descriptor_t* app = &s_app_registery[a_app_select->cursor_app];
-        int new_pos = a_app_select->cursor_param + a_incr;
-        if (new_pos == app->descriptor_count)
-        {
-            new_pos = 0;
-        }
-        if (new_pos == -1)
-        {
-            new_pos = app->descriptor_count - 1;
-        }
-        a_app_select->cursor_param = new_pos;
+        const app_descriptor_t* app = GetAppCursor(a_app_select);
+        a_app_select->cursor_param = wrap(a_app_select->cursor_param + a_incr, app->descriptor_count);
+    }
+    else if (a_app_select->cursor == CURSOR_TYPE_PARAM_VAL)
+    {
+        const app_descriptor_t* app = GetAppCursor(a_app_select);
+        const app_param_descriptor_t* param = GetParamCursor(a_app_select);
+        modify_param(&a_app_select->param_buf[param->byte_offset], param->type, a_incr, param->min, param->max);
     }
 }
 
 static void change_app(app_select_context_t* a_app_select, app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx)
 {
     int16_t cursor = a_app_select->cursor_app;
+    uint8_t param_buf[64];
+    memcpy(param_buf, a_app_select->param_buf, sizeof(param_buf));
     a_app->close(a_app);
 
     memory_arena_set_marker(a_arena, a_app->memory_arena_marker);
     memory_set(a_app, 0, sizeof(a_app));
     
-    s_app_registery[cursor].init(a_app, a_arena, a_ctx, s_app_registery[cursor].params);
+    s_app_registery[cursor].init(a_app, a_arena, a_ctx, param_buf);
 }
 
-void app_select_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, void* a_app_params)
+void app_select_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
 {
     a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
     a_app->user_data = memory_arena_allocate(a_arena, sizeof(app_select_context_t));
@@ -256,13 +275,14 @@ void app_select_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_c
     app_select->cursor = CURSOR_TYPE_APP;
     app_select->cursor_app = 0;
     app_select->cursor_param = 0;
-    button_init_context(&app_select->incr_button, 2, 10);
-    button_init_context(&app_select->decr_button, 3, 10);
-    button_init_context(&app_select->next_button, 4, 10);
-    button_init_context(&app_select->prev_button, 5, 10);
+    button_init_context(&app_select->incr_button, 1, 10);
+    button_init_context(&app_select->decr_button, 2, 10);
+    button_init_context(&app_select->next_button, 3, 10);
+    button_init_context(&app_select->prev_button, 4, 10);
     button_init_context(&app_select->select_app_button, 9, 10);
-    
-    display_app_info(app_select, a_ctx);
+
+    move_cursor(app_select, 0);
+    app_select_render(a_app, a_ctx);
 }
 
 app_update_status_t app_select_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
@@ -281,9 +301,9 @@ app_update_status_t app_select_update(app_context_t* a_app, memory_arena_t* a_ar
         return APP_RENDER;
     }
     int switch_cursor = button_pressed(&app_select->next_button) + -button_pressed(&app_select->prev_button);
-    if (change_cursor != 0)
+    if (switch_cursor != 0)
     {
-        change_cursor(app_select, switch_cursor);
+        app_select->cursor = wrap(app_select->cursor + switch_cursor, CURSOR_TYPE_MAX);
         return APP_RENDER;
     }
 
@@ -299,7 +319,9 @@ app_update_status_t app_select_update(app_context_t* a_app, memory_arena_t* a_ar
 void app_select_render(app_context_t* a_app, render_context_t* a_ctx)
 {
     app_select_context_t* app_select = (app_select_context_t*)a_app->user_data;
+    render_fill(a_ctx, COLOR_BLACK);
     display_app_info(app_select, a_ctx);
+    display_param_info(app_select, a_ctx);
 }
 
 void app_select_close(app_context_t* a_app)

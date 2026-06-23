@@ -37,17 +37,21 @@ pico_sdk_init()
 
 add_executable(S-OS
 main.c
+app/app_select.c
 app/ammo_counter.c
 app/snake.c
 app/pwm_test.c
 app/button_test.c
 app/app_select.c
+app/nfc_test.c
 memory/memory_arena.c
 graphics/renderer.c
 graphics/drivers/st7789.c
 graphics/drivers/ssd1306.c
+io/drivers/pn532.c
 io/button.c
 io/fs.c
+io/nfc.c
 audio/pwm.c
 )
 
