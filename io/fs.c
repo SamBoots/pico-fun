@@ -8,6 +8,24 @@
 #define FS_INDEX_OFFSET (1 * 1024 * 1024) // mb
 #define FS_DATA_START (FS_INDEX_OFFSET + FLASH_SECTOR_SIZE)
 
+#define FS_MAX_FILES 16
+#define FS_MAX_NAME_LEN 16
+#define FS_SENTINEL 0xDEADBEEF
+
+typedef struct fs_entry_t
+{
+    char name[FS_MAX_NAME_LEN];
+    uint32_t offset;
+    uint32_t size;
+} fs_entry_t;
+
+typedef struct fs_t
+{
+    uint32_t sentinel;
+    uint32_t entry_count;
+    fs_entry_t entries[FS_MAX_FILES];
+} fs_t;
+
 static fs_t s_fs;
 
 bool fs_init(void)
@@ -87,5 +105,5 @@ bool fs_write(const char* a_name, size_t a_name_len, const void* a_buf, size_t a
 
 bool fs_exist(const char* a_name)
 {
-    return fs_exist(a_name) != NULL;   
+    return fs_find_entry(a_name) != NULL;   
 }
