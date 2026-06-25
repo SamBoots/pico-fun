@@ -6,6 +6,28 @@ typedef struct memory_arena_t memory_arena_t;
 
 typedef enum { APP_OK, APP_ERR, APP_RENDER, APP_EXIT, APP_EXIT_NO_CLOSE } app_update_status_t;
 
+typedef enum { PARAM_U16, PARAM_U8, PARAM_BOOL } param_type_t;
+
+typedef struct app_param_descriptor_t
+{
+    const char* label;
+    uint16_t label_len;
+    param_type_t type;
+    uint16_t byte_offset;
+    uint16_t min, max;
+} app_param_descriptor_t;
+
+#define APP_PARAM(a_label, a_type, a_offsetoff, a_min, a_max)\
+    ((app_param_descriptor_t)                                \
+    {                                                        \
+        .label       = a_label,                              \
+        .label_len   = sizeof(a_label) - 1,                  \
+        .type        = a_type,                               \
+        .byte_offset = a_offsetoff,                          \
+        .min         = a_min,                                \
+        .max         = a_max                                 \
+    })
+
 typedef struct app_context_t
 {
     uint32_t memory_arena_marker; // start of the app's memory

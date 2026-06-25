@@ -14,17 +14,7 @@
 #include "math.h"
 #include "string.h"
 
-typedef enum { PARAM_U16, PARAM_U8, PARAM_BOOL } param_type_t;
-typedef enum { CURSOR_TYPE_APP = 0, CURSOR_TYPE_PARAM = 1, CURSOR_TYPE_PARAM_VAL = 2, CURSOR_TYPE_MAX = 3 } cursor_type_t;
-
-typedef struct app_param_descriptor_t
-{
-    const char* label;
-    uint16_t label_len;
-    param_type_t type;
-    uint16_t byte_offset;
-    uint16_t min, max;
-} app_param_descriptor_t;
+typedef enum { CURSOR_TYPE_APP = 0, CURSOR_TYPE_PARAM = 1, CURSOR_TYPE_PARAM_VAL = 2, CURSOR_TYPE_SAVE_DEFAULTS = 3, CURSOR_TYPE_RELOAD_DEFAULTS = 4, CURSOR_TYPE_MAX = 5 } cursor_type_t;
 
 typedef struct app_descriptor_t
 {
@@ -37,16 +27,8 @@ typedef struct app_descriptor_t
     uint8_t descriptor_count;
 } app_descriptor_t;
 
+#define PARAM_BUF_SIZE 64
 #define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
-#define APP_PARAM(a_label, a_type, a_offsetoff, a_min, a_max)\
-    {                                                        \
-        .label       = a_label,                              \
-        .label_len   = sizeof(a_label) - 1,                  \
-        .type        = a_type,                               \
-        .byte_offset = a_offsetoff,                          \
-        .min         = a_min,                                \
-        .max         = a_max                                 \
-    }
 
 #define APP_ENTRY(a_name, a_prefix)                              \
     {                                                            \
@@ -58,32 +40,6 @@ typedef struct app_descriptor_t
         .descriptors      = a_prefix##_descriptors,              \
         .descriptor_count = ARRAY_LENGTH(a_prefix##_descriptors) \
     }
-
-static const app_param_descriptor_t ammo_counter_descriptors[] = 
-{
-    APP_PARAM("maxammo", PARAM_U8, offsetof(ammo_counter_params_t, max_ammo), 1, 99),
-    APP_PARAM("scale", PARAM_U8, offsetof(ammo_counter_params_t, scale), 1, 16)
-};
-
-static const app_param_descriptor_t snake_descriptors[] = 
-{
-    APP_PARAM("scale", PARAM_U8, offsetof(snake_params_t, scale), 1, 17)
-};
-
-static const app_param_descriptor_t pwm_test_descriptors[] = 
-{
-    APP_PARAM("pad", PARAM_U8, offsetof(pwm_test_params_t, pad), 1, 17)
-};
-
-static const app_param_descriptor_t nfc_test_descriptors[] = 
-{
-    APP_PARAM("pad", PARAM_U8, offsetof(nfc_test_params_t, pad), 1, 17)
-};
-
-static const ammo_counter_params_t ammo_counter_defaults = { .max_ammo = 42, .scale = 2 };
-static const snake_params_t  snake_defaults  = { .scale = 4 };
-static const pwm_test_params_t pwm_test_defaults = { .pad = 0 };
-static const nfc_test_params_t nfc_test_defaults = { .pad = 0 };
 
 static app_descriptor_t s_app_registery[] = 
 {
@@ -106,7 +62,7 @@ typedef struct app_select_context_t
     int16_t cursor_app;
     int16_t cursor_param;
 
-    uint8_t param_buf[64];
+    uint8_t param_buf[PARAM_BUF_SIZE];
 } app_select_context_t;
 
 static inline void* move_pointer(const void* a_ptr, size_t a_move)
@@ -228,14 +184,24 @@ static inline void modify_param(void* a_data, param_type_t a_type, int a_incr, i
     }
 }
 
+static inline void load_app_params(app_select_context_t* a_app_select)
+{
+    const app_descriptor_t* cursor = GetAppCursor(a_app_select);
+    if (!fs_read(cursor->name, cursor->name_len, a_app_select->param_buf, cursor->params_size))
+    {
+        memcpy(a_app_select->param_buf, cursor->params, cursor->params_size);
+    }
+    
+}
+
 static void move_cursor(app_select_context_t* a_app_select, int a_incr)
 {
     if (a_app_select->cursor == CURSOR_TYPE_APP)
     {
         int new_pos = a_app_select->cursor_app + a_incr;
         a_app_select->cursor_app = wrap(a_app_select->cursor_app + a_incr, s_app_count);
-        const app_descriptor_t* cursor = GetAppCursor(a_app_select);
-        memcpy(a_app_select->param_buf, cursor->params, cursor->params_size);
+        a_app_select->cursor_param = 0;
+        load_app_params(a_app_select);
     }
     else if (a_app_select->cursor == CURSOR_TYPE_PARAM)
     {
@@ -247,6 +213,16 @@ static void move_cursor(app_select_context_t* a_app_select, int a_incr)
         const app_descriptor_t* app = GetAppCursor(a_app_select);
         const app_param_descriptor_t* param = GetParamCursor(a_app_select);
         modify_param(&a_app_select->param_buf[param->byte_offset], param->type, a_incr, param->min, param->max);
+    }
+    else if (a_app_select->cursor == CURSOR_TYPE_SAVE_DEFAULTS)
+    {
+        const app_descriptor_t* app = GetAppCursor(a_app_select);
+        fs_write(app->name, app->name_len, a_app_select->param_buf, PARAM_BUF_SIZE);
+    }
+    else if (a_app_select->cursor == CURSOR_TYPE_RELOAD_DEFAULTS)
+    {
+        const app_descriptor_t* app = GetAppCursor(a_app_select);
+        fs_write(app->name, app->name_len, a_app_select->param_buf, PARAM_BUF_SIZE);
     }
 }
 

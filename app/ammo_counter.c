@@ -7,6 +7,12 @@
 #include "../io/button.h"
 #include "../memory/memory_arena.h"
 
+typedef struct ammo_counter_params_t
+{
+    uint8_t max_ammo;
+    uint8_t scale;
+} ammo_counter_params_t;
+
 typedef struct gun_context_t
 {
     button_context_t fire_button;
@@ -100,4 +106,20 @@ void ammo_counter_close(app_context_t* a_app)
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
     button_free_context(&gun_ctx->fire_button);
     button_free_context(&gun_ctx->reload_button);
+}
+
+void ammo_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
+{
+    *a_param_buf_size = sizeof(ammo_counter_params_t);
+    *a_desc_count = 2;
+}
+
+void ammo_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
+{
+    ammo_counter_params_t* defaults = (ammo_counter_params_t*)a_param_buf;
+    defaults->max_ammo = 42;
+    defaults->scale = 2;
+
+    a_descs[0] = APP_PARAM("maxammo", PARAM_U8, offsetof(ammo_counter_params_t, max_ammo), 1, 99);
+    a_descs[1] = APP_PARAM("scale", PARAM_U8, offsetof(ammo_counter_params_t, scale), 1, 16);
 }

@@ -10,6 +10,11 @@
 
 #define MAX_SNAKE 128 // cheat
 
+typedef struct snake_params_t
+{
+    uint8_t scale;
+} snake_params_t;
+
 typedef struct snake_context_t
 {
     button_context_t north_button;
@@ -197,4 +202,18 @@ void snake_close(app_context_t* a_app)
     button_free_context(&snake_ctx->south_button);
     button_free_context(&snake_ctx->west_button);
     button_free_context(&snake_ctx->east_button);
+}
+
+void snake_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
+{
+    *a_param_buf_size = sizeof(snake_params_t);
+    *a_desc_count = 1;
+}
+
+void snake_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
+{
+    snake_params_t* defaults = (snake_params_t*)a_param_buf;
+    defaults->scale = 2;
+
+    a_descs[0] = APP_PARAM("scale", PARAM_U8, offsetof(snake_params_t, scale), 1, 16);
 }

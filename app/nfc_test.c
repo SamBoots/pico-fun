@@ -6,6 +6,11 @@
 #include "../graphics/renderer.h"
 #include "../memory/memory_arena.h"
 
+typedef struct nfc_test_params_t
+{
+    uint8_t pad;
+} nfc_test_params_t;
+
 typedef struct nfc_test_context_t
 {
     nfc_context_t nfc_rw;
@@ -55,4 +60,18 @@ void nfc_test_render(app_context_t* a_app, render_context_t* a_ctx)
 void nfc_test_close(app_context_t* a_app)
 {
 
+}
+
+void nfc_test_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
+{
+    *a_param_buf_size = sizeof(nfc_test_params_t);
+    *a_desc_count = 1;
+}
+
+void nfc_test_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
+{
+    nfc_test_params_t* defaults = (nfc_test_params_t*)a_param_buf;
+    defaults->pad = 0;
+
+    a_descs[0] = APP_PARAM("pad", PARAM_U8, offsetof(nfc_test_params_t, pad), 0, 1);
 }

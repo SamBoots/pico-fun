@@ -6,6 +6,11 @@
 #include "../memory/memory_arena.h"
 #include "math.h"
 
+typedef struct button_test_params_t
+{
+    uint16_t pad;
+} button_test_params_t;
+
 typedef struct button_test_context_t
 {
     button_context_t button_0;
@@ -46,4 +51,18 @@ void button_test_render(app_context_t* a_app, render_context_t* a_ctx)
 void button_test_close(app_context_t* a_app)
 {
     button_test_context_t* app_ctx = (button_test_context_t*)a_app->user_data;
+}
+
+void button_test_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
+{
+    *a_param_buf_size = sizeof(button_test_params_t);
+    *a_desc_count = 1;
+}
+
+void button_test_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
+{
+    button_test_params_t* defaults = (button_test_params_t*)a_param_buf;
+    defaults->pad = 0;
+
+    a_descs[0] = APP_PARAM("pad", PARAM_U8, offsetof(button_test_params_t, pad), 0, 1);
 }

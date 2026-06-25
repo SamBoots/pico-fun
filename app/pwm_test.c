@@ -7,6 +7,11 @@
 #include "../audio/pwm.h"
 #include "math.h"
 
+typedef struct pwm_test_params_t
+{
+    uint16_t pad;
+} pwm_test_params_t;
+
 typedef struct pwm_test_context_t
 {
     pwm_context_t pwm;
@@ -51,4 +56,18 @@ void pwm_test_render(app_context_t* a_app, render_context_t* a_ctx)
 void pwm_test_close(app_context_t* a_app)
 {
 
+}
+
+void pwm_test_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
+{
+    *a_param_buf_size = sizeof(pwm_test_params_t);
+    *a_desc_count = 1;
+}
+
+void pwm_test_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
+{
+    pwm_test_params_t* defaults = (pwm_test_params_t*)a_param_buf;
+    defaults->pad = 0;
+
+    a_descs[0] = APP_PARAM("pad", PARAM_U8, offsetof(pwm_test_params_t, pad), 0, 1);
 }
