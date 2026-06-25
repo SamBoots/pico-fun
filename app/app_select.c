@@ -117,7 +117,6 @@ static inline void display_app_info(app_select_context_t* a_app_select, render_c
 
 static inline void display_param_info(app_select_context_t* a_app_select, render_context_t* a_ctx)
 {
-    const app_descriptor_t* cursor = GetAppCursor(a_app_select);
     const app_param_descriptor_t* param = GetParamCursor(a_app_select);
     uint16_t param_color = COLOR_GREEN;
     uint16_t param_val_color = COLOR_GREEN;
@@ -166,6 +165,19 @@ static inline void display_param_info(app_select_context_t* a_app_select, render
         break;
     }
     }
+}
+
+static inline void display_param_save_info(app_select_context_t* a_app_select, render_context_t* a_ctx)
+{
+    uint16_t save_color = COLOR_GREEN;
+    uint16_t reload_color = COLOR_GREEN;
+    if (a_app_select->cursor == CURSOR_TYPE_SAVE_DEFAULTS)
+        save_color = COLOR_RED;
+    else if (a_app_select->cursor == CURSOR_TYPE_RELOAD_DEFAULTS)
+        reload_color = COLOR_RED;
+
+    render_8x16glyphs(a_ctx, "save", 4, 4, 3, save_color, COLOR_BLACK, 0, a_ctx->height);
+    render_8x16glyphs(a_ctx, "reload", 4, 4, 3, reload_color, COLOR_BLACK, 128, a_ctx->height);
 }
 
 static inline void modify_param(void* a_data, param_type_t a_type, int a_incr, int a_min, int a_max)
@@ -299,6 +311,7 @@ void app_select_render(app_context_t* a_app, render_context_t* a_ctx)
     render_fill(a_ctx, COLOR_BLACK);
     display_app_info(app_select, a_ctx);
     display_param_info(app_select, a_ctx);
+    display_param_save_info(app_select, a_ctx);
 }
 
 void app_select_close(app_context_t* a_app)
