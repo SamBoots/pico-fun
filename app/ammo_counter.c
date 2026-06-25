@@ -108,13 +108,13 @@ void ammo_counter_close(app_context_t* a_app)
     button_free_context(&gun_ctx->reload_button);
 }
 
-void ammo_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
+void ammo_counter_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
 {
     *a_param_buf_size = sizeof(ammo_counter_params_t);
     *a_desc_count = 2;
 }
 
-void ammo_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
+void ammo_counter_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
 {
     ammo_counter_params_t* defaults = (ammo_counter_params_t*)a_param_buf;
     defaults->max_ammo = 42;

@@ -21,24 +21,21 @@ typedef struct app_descriptor_t
     const char* name;
     uint16_t name_len;
     app_init_t init;
-    const void* params;
-    size_t params_size;
-    const app_param_descriptor_t* descriptors;
-    uint8_t descriptor_count;
+    void (*default_sizes)(size_t* a_param_buf_size, size_t* a_desc_count);
+    void (*default_params)(uint8_t* a_param_buf, app_param_descriptor_t* a_descs);
 } app_descriptor_t;
 
 #define PARAM_BUF_SIZE 64
+#define PARAM_MAX_DESCRIPTORS 16
 #define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 
-#define APP_ENTRY(a_name, a_prefix)                              \
-    {                                                            \
-        .name             = a_name,                              \
-        .name_len         = sizeof(a_name) - 1,                  \
-        .init             = a_prefix##_init_app,                 \
-        .params           = &a_prefix##_defaults,                \
-        .params_size      = sizeof(a_prefix##_defaults),         \
-        .descriptors      = a_prefix##_descriptors,              \
-        .descriptor_count = ARRAY_LENGTH(a_prefix##_descriptors) \
+#define APP_ENTRY(a_name, a_prefix)                    \
+    {                                                  \
+        .name             = a_name,                    \
+        .name_len         = sizeof(a_name) - 1,        \
+        .init             = a_prefix##_init_app,       \
+        .default_sizes    = a_prefix##_default_sizes,  \
+        .default_params   = a_prefix##_default_params \
     }
 
 static app_descriptor_t s_app_registery[] = 
@@ -63,6 +60,9 @@ typedef struct app_select_context_t
     int16_t cursor_param;
 
     uint8_t param_buf[PARAM_BUF_SIZE];
+    uint16_t param_buf_size;
+    app_descriptor_t app_descs[PARAM_MAX_DESCRIPTORS];
+    uint16_t app_desc_count;
 } app_select_context_t;
 
 static inline void* move_pointer(const void* a_ptr, size_t a_move)
@@ -88,7 +88,7 @@ static inline const app_descriptor_t* GetAppCursor(app_select_context_t* a_app_s
 
 static inline const app_param_descriptor_t* GetParamCursor(app_select_context_t* a_app_select)
 {
-    return &s_app_registery[a_app_select->cursor_app].descriptors[a_app_select->cursor_param];
+    return &a_app_select->app_descs[a_app_select->cursor_param];
 }
 
 static inline const uint16_t get_u16_param(const app_param_descriptor_t* a_desc, void* a_data)
@@ -186,12 +186,15 @@ static inline void modify_param(void* a_data, param_type_t a_type, int a_incr, i
 
 static inline void load_app_params(app_select_context_t* a_app_select)
 {
+    s_app_registery[a_app_select->cursor_app].default_sizes(&a_app_select->param_buf_size, &a_app_select->app_desc_count);
+
+    // TODO, ERROR CHECK SIZES HERE
+
+    s_app_registery[a_app_select->cursor_app].default_params(&a_app_select->param_buf, a_app_select->app_descs);
+
     const app_descriptor_t* cursor = GetAppCursor(a_app_select);
-    if (!fs_read(cursor->name, cursor->name_len, a_app_select->param_buf, cursor->params_size))
-    {
-        memcpy(a_app_select->param_buf, cursor->params, cursor->params_size);
-    }
-    
+    // override default params, maybe make it a different function call?
+    fs_read(cursor->name, cursor->name_len, a_app_select->param_buf, a_app_select->param_buf_size);
 }
 
 static void move_cursor(app_select_context_t* a_app_select, int a_incr)
@@ -205,12 +208,10 @@ static void move_cursor(app_select_context_t* a_app_select, int a_incr)
     }
     else if (a_app_select->cursor == CURSOR_TYPE_PARAM)
     {
-        const app_descriptor_t* app = GetAppCursor(a_app_select);
-        a_app_select->cursor_param = wrap(a_app_select->cursor_param + a_incr, app->descriptor_count);
+        a_app_select->cursor_param = wrap(a_app_select->cursor_param + a_incr, a_app_select->app_desc_count);
     }
     else if (a_app_select->cursor == CURSOR_TYPE_PARAM_VAL)
     {
-        const app_descriptor_t* app = GetAppCursor(a_app_select);
         const app_param_descriptor_t* param = GetParamCursor(a_app_select);
         modify_param(&a_app_select->param_buf[param->byte_offset], param->type, a_incr, param->min, param->max);
     }
@@ -222,7 +223,7 @@ static void move_cursor(app_select_context_t* a_app_select, int a_incr)
     else if (a_app_select->cursor == CURSOR_TYPE_RELOAD_DEFAULTS)
     {
         const app_descriptor_t* app = GetAppCursor(a_app_select);
-        fs_write(app->name, app->name_len, a_app_select->param_buf, PARAM_BUF_SIZE);
+        s_app_registery[a_app_select->cursor_app].default_params(&a_app_select->param_buf, a_app_select->app_descs);
     }
 }
 
@@ -308,4 +309,18 @@ void app_select_close(app_context_t* a_app)
     button_free_context(&app_select->next_button);
     button_free_context(&app_select->prev_button);
     button_free_context(&app_select->select_app_button);
+}
+
+void app_select_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
+{
+    // dummy
+    (void)a_param_buf_size;
+    (void)a_desc_count;
+}
+
+void app_select_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
+{
+    // dummy
+    (void)a_param_buf;
+    (void)a_descs;
 }
