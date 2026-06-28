@@ -7,6 +7,7 @@
 
 #include "io/io_types.h"
 #include "io/button.h"
+#include "io/fs.h"
 
 #include "memory/memory_arena.h"
 
@@ -75,7 +76,7 @@ int main(void)
     button_context_t exit_app;
     button_init_context(&exit_app, 13, 10);
 
-
+    fs_init();
     while (true)
     {
         uint32_t now_ms = to_ms_since_boot(get_absolute_time());

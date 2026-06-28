@@ -8,7 +8,7 @@
 
 typedef struct button_test_params_t
 {
-    uint16_t pad;
+    uint8_t pad;
 } button_test_params_t;
 
 typedef struct button_test_context_t

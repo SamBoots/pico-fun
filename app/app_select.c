@@ -14,7 +14,7 @@
 #include "math.h"
 #include "string.h"
 
-typedef enum { CURSOR_TYPE_APP = 0, CURSOR_TYPE_PARAM = 1, CURSOR_TYPE_PARAM_VAL = 2, CURSOR_TYPE_SAVE_DEFAULTS = 3, CURSOR_TYPE_RELOAD_DEFAULTS = 4, CURSOR_TYPE_MAX = 5 } cursor_type_t;
+typedef enum { CURSOR_TYPE_APP = 0, CURSOR_TYPE_PARAM = 1, CURSOR_TYPE_PARAM_VAL = 2, CURSOR_TYPE_SAVE_DEFAULT = 3, CURSOR_TYPE_RELOAD_DEFAULT = 4, CURSOR_TYPE_MAX = 5 } cursor_type_t;
 
 typedef struct app_descriptor_t
 {
@@ -35,7 +35,7 @@ typedef struct app_descriptor_t
         .name_len         = sizeof(a_name) - 1,        \
         .init             = a_prefix##_init_app,       \
         .default_sizes    = a_prefix##_default_sizes,  \
-        .default_params   = a_prefix##_default_params \
+        .default_params   = a_prefix##_default_params  \
     }
 
 static app_descriptor_t s_app_registery[] = 
@@ -60,9 +60,9 @@ typedef struct app_select_context_t
     int16_t cursor_param;
 
     uint8_t param_buf[PARAM_BUF_SIZE];
-    uint16_t param_buf_size;
-    app_descriptor_t app_descs[PARAM_MAX_DESCRIPTORS];
-    uint16_t app_desc_count;
+    size_t param_buf_size;
+    app_param_descriptor_t app_descs[PARAM_MAX_DESCRIPTORS];
+    size_t app_desc_count;
 } app_select_context_t;
 
 static inline void* move_pointer(const void* a_ptr, size_t a_move)
@@ -112,7 +112,7 @@ static inline void display_app_info(app_select_context_t* a_app_select, render_c
     uint16_t select_color = COLOR_GREEN;
     if (a_app_select->cursor == CURSOR_TYPE_APP)
         select_color = COLOR_RED;
-    render_8x16glyphs(a_ctx, cursor->name, cursor->name_len, 4, 3, select_color, COLOR_BLACK, 16, a_ctx->height / 4 * 1);
+    render_8x16glyphs(a_ctx, cursor->name, cursor->name_len, 4, 3, select_color, COLOR_BLACK, 16, a_ctx->height / 6 * 1);
 }
 
 static inline void display_param_info(app_select_context_t* a_app_select, render_context_t* a_ctx)
@@ -125,7 +125,7 @@ static inline void display_param_info(app_select_context_t* a_app_select, render
     else if (a_app_select->cursor == CURSOR_TYPE_PARAM_VAL)
         param_val_color = COLOR_RED;
 
-    render_8x16glyphs(a_ctx, param->label, param->label_len, 4, 3, param_color, COLOR_BLACK, 16, a_ctx->height / 4 * 2);
+    render_8x16glyphs(a_ctx, param->label, param->label_len, 4, 3, param_color, COLOR_BLACK, 16, a_ctx->height / 6 * 2);
     switch (param->type)
     {
     case PARAM_U16:
@@ -140,7 +140,7 @@ static inline void display_param_info(app_select_context_t* a_app_select, render
             str[3] = '0' + (val / 10);
             str[4] = '0' + (val % 10);
         }
-        render_8x16glyphs(a_ctx, str, 5, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 4 * 3);
+        render_8x16glyphs(a_ctx, str, 5, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 6 * 3);
         break;
     }
     case PARAM_U8:
@@ -153,15 +153,15 @@ static inline void display_param_info(app_select_context_t* a_app_select, render
             str[1] = '0' + (val / 10);
             str[2] = '0' + (val % 10);
         }
-        render_8x16glyphs(a_ctx, str, 3, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 4 * 3);
+        render_8x16glyphs(a_ctx, str, 3, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 6 * 3);
         break;
     }
     case PARAM_BOOL:
     {
         if (get_bool_param(param, (void*)a_app_select->param_buf))
-            render_8x16glyphs(a_ctx, "true", 4, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 4 * 3);
+            render_8x16glyphs(a_ctx, "true", 4, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 6 * 3);
         else
-            render_8x16glyphs(a_ctx, "false", 5, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 4 * 3);
+            render_8x16glyphs(a_ctx, "false", 5, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 6 * 3);
         break;
     }
     }
@@ -171,13 +171,13 @@ static inline void display_param_save_info(app_select_context_t* a_app_select, r
 {
     uint16_t save_color = COLOR_GREEN;
     uint16_t reload_color = COLOR_GREEN;
-    if (a_app_select->cursor == CURSOR_TYPE_SAVE_DEFAULTS)
+    if (a_app_select->cursor == CURSOR_TYPE_SAVE_DEFAULT)
         save_color = COLOR_RED;
-    else if (a_app_select->cursor == CURSOR_TYPE_RELOAD_DEFAULTS)
+    else if (a_app_select->cursor == CURSOR_TYPE_RELOAD_DEFAULT)
         reload_color = COLOR_RED;
 
-    render_8x16glyphs(a_ctx, "save", 4, 4, 3, save_color, COLOR_BLACK, 0, a_ctx->height);
-    render_8x16glyphs(a_ctx, "reload", 4, 4, 3, reload_color, COLOR_BLACK, 128, a_ctx->height);
+    render_8x16glyphs(a_ctx, "save", 4, 4, 3, save_color, COLOR_BLACK, 16, a_ctx->height / 6 * 4);
+    render_8x16glyphs(a_ctx, "reload", 6, 4, 3, reload_color, COLOR_BLACK, 16, a_ctx->height / 6 * 5);
 }
 
 static inline void modify_param(void* a_data, param_type_t a_type, int a_incr, int a_min, int a_max)
@@ -202,7 +202,7 @@ static inline void load_app_params(app_select_context_t* a_app_select)
 
     // TODO, ERROR CHECK SIZES HERE
 
-    s_app_registery[a_app_select->cursor_app].default_params(&a_app_select->param_buf, a_app_select->app_descs);
+    s_app_registery[a_app_select->cursor_app].default_params(a_app_select->param_buf, a_app_select->app_descs);
 
     const app_descriptor_t* cursor = GetAppCursor(a_app_select);
     // override default params, maybe make it a different function call?
@@ -227,15 +227,15 @@ static void move_cursor(app_select_context_t* a_app_select, int a_incr)
         const app_param_descriptor_t* param = GetParamCursor(a_app_select);
         modify_param(&a_app_select->param_buf[param->byte_offset], param->type, a_incr, param->min, param->max);
     }
-    else if (a_app_select->cursor == CURSOR_TYPE_SAVE_DEFAULTS)
+    else if (a_app_select->cursor == CURSOR_TYPE_SAVE_DEFAULT)
     {
         const app_descriptor_t* app = GetAppCursor(a_app_select);
         fs_write(app->name, app->name_len, a_app_select->param_buf, PARAM_BUF_SIZE);
     }
-    else if (a_app_select->cursor == CURSOR_TYPE_RELOAD_DEFAULTS)
+    else if (a_app_select->cursor == CURSOR_TYPE_RELOAD_DEFAULT)
     {
         const app_descriptor_t* app = GetAppCursor(a_app_select);
-        s_app_registery[a_app_select->cursor_app].default_params(&a_app_select->param_buf, a_app_select->app_descs);
+        s_app_registery[a_app_select->cursor_app].default_params(a_app_select->param_buf, a_app_select->app_descs);
     }
 }
 

@@ -52,7 +52,7 @@ typedef struct render_context_t
         } i2c;
     };
 
-    uint8_t buffer[ROW_BUFFER_SIZE][2];
+    uint8_t buffer[ROW_BUFFER_SIZE];
     uint16_t buffer_offset;
     uint8_t buffer_index;
     
