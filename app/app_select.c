@@ -5,6 +5,7 @@
 #include "snake.h"
 #include "pwm_test.h"
 #include "nfc_test.h"
+#include "button_test.h"
 #include "../io/io_types.h"
 #include "../io/button.h"
 #include "../io/fs.h"
@@ -43,7 +44,8 @@ static app_descriptor_t s_app_registery[] =
     APP_ENTRY("ammo", ammo_counter),
     APP_ENTRY("snake", snake),
     APP_ENTRY("pwm", pwm_test),
-    APP_ENTRY("nfc", nfc_test)
+    APP_ENTRY("nfc", nfc_test),
+    APP_ENTRY("button", button_test)
 };
 static const uint8_t s_app_count = ARRAY_LENGTH(s_app_registery);
 
@@ -326,9 +328,8 @@ void app_select_close(app_context_t* a_app)
 
 void app_select_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
 {
-    // dummy
-    (void)a_param_buf_size;
-    (void)a_desc_count;
+    a_param_buf_size = 0;
+    a_desc_count = 0;
 }
 
 void app_select_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)

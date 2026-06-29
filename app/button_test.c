@@ -13,7 +13,7 @@ typedef enum { BUTTON_RELEASE, BUTTON_PRESSED, BUTTON_HELD } button_status_t;
 typedef struct button_test_params_t
 {
     uint8_t button_count;
-    uint8_t button_pin[8]
+    uint8_t button_pin[8];
 } button_test_params_t;
 
 typedef struct button_test_context_t
@@ -30,7 +30,7 @@ typedef struct button_test_context_t
 // simple sine wave tone, 4000 samples at 8000Hz = 0.5 seconds
 static uint8_t s_tone[4000];
 
-void button_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, void* a_app_params)
+void button_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
 {
     a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
     a_app->user_data = memory_arena_allocate(a_arena, sizeof(button_test_context_t));
@@ -43,7 +43,7 @@ void button_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_
     app_ctx->button_count = params->button_count;
     
     app_ctx->height_split = a_ctx->height > a_ctx->width;
-    if (app_ctx->height_split)
+    if (!app_ctx->height_split)
     {
         app_ctx->sector_width = a_ctx->width / 2;
         app_ctx->sector_height = a_ctx->height / 4;
@@ -58,9 +58,9 @@ void button_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_
     {
         button_init_context(&app_ctx->buttons[i], params->button_pin[i], 20);
         app_ctx->button_new_statuses[i] = BUTTON_RELEASE;
-        app_ctx->button_old_statuses[i] = BUTTON_RELEASE;
+        app_ctx->button_old_statuses[i] = BUTTON_PRESSED;
     }
-    
+    button_test_render(a_app, a_ctx);
 }
 
 app_update_status_t button_test_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
@@ -72,17 +72,17 @@ app_update_status_t button_test_update(app_context_t* a_app, memory_arena_t* a_a
     {
         button_update(&app_ctx->buttons[i], a_now_ms);
         app_ctx->button_old_statuses[i] = app_ctx->button_new_statuses[i];
-        if (app_ctx->button_new_statuses[i] == BUTTON_RELEASE && button_pressed(&app_ctx->buttons[i]))
+        if (button_pressed(&app_ctx->buttons[i]))
         {
             app_ctx->button_new_statuses[i] = BUTTON_PRESSED;
             status = APP_RENDER;
         }
-        if (app_ctx->button_new_statuses[i] == BUTTON_PRESSED && button_released(&app_ctx->buttons[i]))
+        if (button_released(&app_ctx->buttons[i]))
         {
             app_ctx->button_new_statuses[i] = BUTTON_RELEASE;
             status = APP_RENDER;
         }
-        if (app_ctx->button_new_statuses[i] == BUTTON_HELD && button_held(&app_ctx->buttons[i]))
+        if (button_held(&app_ctx->buttons[i]))
         {
             app_ctx->button_new_statuses[i] = BUTTON_HELD;
             status = APP_RENDER;
@@ -93,16 +93,79 @@ app_update_status_t button_test_update(app_context_t* a_app, memory_arena_t* a_a
     return status;
 }
 
+static void button_status_string(button_status_t a_status, const char** a_pstring, uint16_t* a_pstr_len)
+{
+    switch (a_status)
+    {
+    case BUTTON_RELEASE:
+        *a_pstring = "released";
+        *a_pstr_len = 8;
+    case BUTTON_PRESSED:
+        *a_pstring = "pressed";
+        *a_pstr_len = 7;
+    case BUTTON_HELD:
+        *a_pstring = "held";
+        *a_pstr_len = 4;
+    }
+}
+
 void button_test_render(app_context_t* a_app, render_context_t* a_ctx)
 {
     button_test_context_t* app_ctx = (button_test_context_t*)a_app->user_data;
     if (app_ctx->height_split)
     {
-
+        uint16_t ping_pong_color_0 = COLOR_BLUE;
+        uint16_t ping_pong_color_1 = COLOR_GREEN;
+        uint16_t height = 0;
+        for (size_t i = 0; i < 4; i++)
+        {
+            uint16_t width = i * app_ctx->sector_width;
+            if (app_ctx->button_new_statuses != app_ctx->button_old_statuses)
+            {
+                if (ping_pong_color_0 == COLOR_GREEN)
+                {
+                    ping_pong_color_0 = COLOR_BLUE;
+                    ping_pong_color_1 = COLOR_GREEN;
+                }
+                else
+                {
+                    ping_pong_color_0 = COLOR_GREEN;
+                    ping_pong_color_1 = COLOR_BLUE;
+                }
+                const char* str;
+                uint16_t str_len;
+                button_status_string(app_ctx->button_new_statuses[i], &str, &str_len);
+                render_draw_rect(a_ctx, width, height, app_ctx->sector_width, app_ctx->sector_height, ping_pong_color_1);
+                render_8x16glyphs(a_ctx, str, str_len, 4, 2, ping_pong_color_0, ping_pong_color_1, width, height);
+            }
+        }
+        height = app_ctx->sector_height;
+        for (size_t i = 4; i < 8; i++)
+        {
+            uint16_t width = (i - 4)  * app_ctx->sector_width;
+            if (app_ctx->button_new_statuses != app_ctx->button_old_statuses)
+            {
+                const char* str;
+                uint16_t str_len;
+                button_status_string(app_ctx->button_new_statuses[i], &str, &str_len);
+                render_draw_rect(a_ctx, width, height, app_ctx->sector_width, app_ctx->sector_height, ping_pong_color_0);
+                render_8x16glyphs(a_ctx, str, str_len, 4, 2, ping_pong_color_0, ping_pong_color_1, width, height);
+                if (ping_pong_color_0 == COLOR_GREEN)
+                {
+                    ping_pong_color_0 = COLOR_BLUE;
+                    ping_pong_color_1 = COLOR_GREEN;
+                }
+                else
+                {
+                    ping_pong_color_0 = COLOR_GREEN;
+                    ping_pong_color_1 = COLOR_BLUE;
+                }
+            }
+        }
     }
     else
     {
-        
+        // later...
     }
 }
 
@@ -114,7 +177,7 @@ void button_test_close(app_context_t* a_app)
 void button_test_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
 {
     *a_param_buf_size = sizeof(button_test_params_t);
-    *a_desc_count = 1;
+    *a_desc_count = 8;
 }
 
 void button_test_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
@@ -123,13 +186,13 @@ void button_test_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_
     defaults->button_count = 1;
     defaults->button_pin[0] = 1;
 
-    a_descs[0] = APP_PARAM("button count", PARAM_U8, offsetof(button_test_params_t, button_count), 1, 8);
-    a_descs[1] = APP_PARAM("button pin 0", PARAM_U8, offsetof(button_test_params_t, button_pin[0]), 1, 26);
-    a_descs[2] = APP_PARAM("button pin 1", PARAM_U8, offsetof(button_test_params_t, button_pin[1]), 1, 26);
-    a_descs[3] = APP_PARAM("button pin 2", PARAM_U8, offsetof(button_test_params_t, button_pin[2]), 1, 26);
-    a_descs[4] = APP_PARAM("button pin 3", PARAM_U8, offsetof(button_test_params_t, button_pin[3]), 1, 26);
-    a_descs[5] = APP_PARAM("button pin 4", PARAM_U8, offsetof(button_test_params_t, button_pin[4]), 1, 26);
-    a_descs[6] = APP_PARAM("button pin 5", PARAM_U8, offsetof(button_test_params_t, button_pin[5]), 1, 26);
-    a_descs[7] = APP_PARAM("button pin 6", PARAM_U8, offsetof(button_test_params_t, button_pin[6]), 1, 26);
-    a_descs[8] = APP_PARAM("button pin 7", PARAM_U8, offsetof(button_test_params_t, button_pin[7]), 1, 26);
+    a_descs[0] = APP_PARAM("count", PARAM_U8, offsetof(button_test_params_t, button_count), 1, 8);
+    a_descs[1] = APP_PARAM("pin 0", PARAM_U8, offsetof(button_test_params_t, button_pin[0]), 1, 26);
+    a_descs[2] = APP_PARAM("pin 1", PARAM_U8, offsetof(button_test_params_t, button_pin[1]), 1, 26);
+    a_descs[3] = APP_PARAM("pin 2", PARAM_U8, offsetof(button_test_params_t, button_pin[2]), 1, 26);
+    a_descs[4] = APP_PARAM("pin 3", PARAM_U8, offsetof(button_test_params_t, button_pin[3]), 1, 26);
+    a_descs[5] = APP_PARAM("pin 4", PARAM_U8, offsetof(button_test_params_t, button_pin[4]), 1, 26);
+    a_descs[6] = APP_PARAM("pin 5", PARAM_U8, offsetof(button_test_params_t, button_pin[5]), 1, 26);
+    a_descs[7] = APP_PARAM("pin 6", PARAM_U8, offsetof(button_test_params_t, button_pin[6]), 1, 26);
+    a_descs[8] = APP_PARAM("pin 7", PARAM_U8, offsetof(button_test_params_t, button_pin[7]), 1, 26);
 }

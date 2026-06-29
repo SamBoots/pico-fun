@@ -144,7 +144,7 @@ void st7789_draw_pixel(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint
     cs_high(a_ctx);
 }
 
-void st7789_draw_rect(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16_t a_w, uint16_t a_h, uint16_t a_color)
+static void draw_lines_horizontal(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16_t a_w, uint16_t a_h, uint16_t a_color)
 {
     for (int i = 0; i < a_w; i++)
     {
@@ -162,6 +162,29 @@ void st7789_draw_rect(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint1
     a_ctx->buffer_offset = 0;
 }
 
+static void draw_lines_vertical(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16_t a_w, uint16_t a_h, uint16_t a_color)
+{
+    for (int i = 0; i < a_w; i++)
+    {
+        a_ctx->buffer[i * 2] = a_color >> 8;
+        a_ctx->buffer[i * 2 + 1] = a_color & 0xFF;
+    }
+    a_ctx->buffer_offset = a_w * 2;
+    st7789_raset(a_ctx, a_y, a_y + a_h - 1);
+    
+    for (int x = 0; x < a_x; x++)
+    {
+        st7789_caset(a_ctx, a_x + x, a_x + x);
+        st7789_flush_no_clear(a_ctx);
+    }
+    a_ctx->buffer_offset = 0;
+}
+
+void st7789_draw_rect(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16_t a_w, uint16_t a_h, uint16_t a_color)
+{
+    draw_lines_horizontal(a_ctx, a_x, a_y, a_w, a_h, a_color);
+}
+
 void st7789_draw_8x16glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_front_color, uint16_t a_back_color, uint16_t a_x, uint16_t a_y)
 {
     int glyph_w = 8 * a_scale;
@@ -170,6 +193,7 @@ void st7789_draw_8x16glyphs(render_context_t* a_ctx, const char* a_str, uint16_t
     {
         const uint8_t* glyph = font8x16_glyph(a_str[i]);
         int x_offset = i * (glyph_w + a_spacing);
+        draw_lines_horizontal(a_ctx, a_x + x_offset - a_spacing, a_y, a_spacing, glyph_h, a_back_color);
         for (int y = 0; y < glyph_h; y++)
         {
             uint8_t bits = glyph[y / a_scale];
@@ -190,6 +214,7 @@ void st7789_draw_4x8glyphs(render_context_t* a_ctx, const char* a_str, uint16_t 
     {
         const uint8_t* glyph = font4x8_glyph(a_str[i]);
         int x_offset = i * (glyph_w + a_spacing);
+        draw_lines_horizontal(a_ctx, a_x + x_offset - a_spacing, a_y, a_spacing, glyph_h, a_back_color);
         for (int x = 0; x < glyph_w; x++)
         {
             uint8_t bits = glyph[x / a_scale];
