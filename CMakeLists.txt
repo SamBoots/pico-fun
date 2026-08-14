@@ -33,11 +33,13 @@ project(S_OS C CXX ASM)
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
-# Add executable. Default name is the project name
+# which apps to initialize
 
 option(APP_AMMO "Add ammo app" ON)
 option(APP_SNAKE "Add snake app" ON)
 option(ADD_DEBUG_APPS "add test apps" ON)
+
+# Add executable. Default name is the project name
 
 add_executable(S_OS
 main.c

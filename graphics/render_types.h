@@ -8,7 +8,8 @@
 #define ST7789_MAX_WIDTH 320
 #define SSD1306_MAX_FRAMEBUFFER 1024
 
-#define ROW_BUFFER_SIZE SSD1306_MAX_FRAMEBUFFER // resize this if another driver has a bigger buffer
+#define BAND_ROWS 16
+#define BAND_BUFFER_SIZE ST7789_MAX_WIDTH * BAND_ROWS
 
 #define COLOR_BLACK   0x0000
 #define COLOR_WHITE   0xFFFF
@@ -52,12 +53,10 @@ typedef struct render_context_t
         } i2c;
     };
 
-    uint8_t buffer[ROW_BUFFER_SIZE];
-    uint16_t buffer_offset;
+    uint8_t buffer[BAND_BUFFER_SIZE][2];
     uint8_t buffer_index;
     
     int dma_chan;
-    dma_channel_config dma_cfg;
 
     void (*init)(struct render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a_x_offset, uint16_t a_y_offset, uint16_t a_mhz);
     void (*draw_pixel)(struct render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16_t a_color);

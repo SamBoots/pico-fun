@@ -5,11 +5,20 @@
 #include "../font8x16.h"
 #include "../font4x8.h"
 #include "string.h"
+
+// STANDARDIZE THESE HELPERS
+
+static uint8_t* get_buffer_and_swap(render_context_t* a_ctx)
+{
+    uint8_t* buf = a_ctx->buffer[a_ctx->buffer_index];
+    a_ctx->buffer_index ^= 1;
+    return buf;
+}
  
-static inline void dc_low(const render_context_t* a_context)  { gpio_put(a_context->spi.pin_dc, 0); }
-static inline void dc_high(const render_context_t* a_context) { gpio_put(a_context->spi.pin_dc, 1); }
-static inline void cs_low(const render_context_t* a_context)  { gpio_put(a_context->spi.pin_cs, 0); }
-static inline void cs_high(const render_context_t* a_context) { gpio_put(a_context->spi.pin_cs, 1); }
+static inline void dc_low(const render_context_t* a_ctx)  { gpio_put(a_ctx->spi.pin_dc, 0); }
+static inline void dc_high(const render_context_t* a_ctx) { gpio_put(a_ctx->spi.pin_dc, 1); }
+static inline void cs_low(const render_context_t* a_ctx)  { gpio_put(a_ctx->spi.pin_cs, 0); }
+static inline void cs_high(const render_context_t* a_ctx) { gpio_put(a_ctx->spi.pin_cs, 1); }
 
 static void st7789_send_cmd(const render_context_t* a_ctx, uint8_t a_cmd)
 {
@@ -82,7 +91,6 @@ void st7789_init(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a
     a_ctx->spi.pin_rst = 21;
     a_ctx->spi.pin_bl = 22;
     a_ctx->spi.spi = spi0; // just do SPI0 who cares
-    a_ctx->buffer_offset = 0;
     memset(&a_ctx->buffer, 0, sizeof(a_ctx->buffer));
 
     spi_init(a_ctx->spi.spi, a_ctx->mhz * 1000 * 1000);
@@ -117,14 +125,27 @@ void st7789_init(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a
     gpio_put(a_ctx->spi.pin_bl, 1);           // backlight on
     st7789_draw_rect(a_ctx, 0, 0, a_ctx->width, a_ctx->height, 0);
 
-    // setup DMA
     a_ctx->dma_chan = dma_claim_unused_channel(true);
-    a_ctx->dma_cfg = dma_channel_get_default_config(a_ctx->dma_chan);
+}
 
-    channel_config_set_transfer_data_size(&a_ctx->dma_cfg, DMA_SIZE_16);
-    channel_config_set_dreq(&a_ctx->dma_cfg, spi_get_dreq(a_ctx->spi.spi, true));
-    channel_config_set_read_increment(&a_ctx->dma_cfg, true);
-    channel_config_set_write_increment(&a_ctx->dma_cfg, false);
+static void begin_draw(render_context_t* a_ctx, uint16_t a_x0, uint16_t a_x1, uint16_t a_y0, uint16_t a_y1)
+{
+    st7789_caset(a_ctx, a_x0, a_x1);
+    st7789_raset(a_ctx, a_y0, a_y1);
+    cs_low(a_ctx);
+    dc_low(a_ctx);
+    st7789_send_cmd(a_ctx, 0x2C);
+    dc_high(a_ctx)
+}
+
+static void end_draw(render_context_t* a_ctx)
+{
+    cs_high(a_ctx);
+}
+
+static void st7789_stream_wait_idle(render_context_t* a_ctx)
+{
+    while (dma_channel_is_busy(a_ctx->dma_chan)) tight_loop_contents();
 }
 
 void st7789_draw_pixel(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16_t a_color)
@@ -144,45 +165,45 @@ void st7789_draw_pixel(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint
     cs_high(a_ctx);
 }
 
-static void draw_lines_horizontal(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16_t a_w, uint16_t a_h, uint16_t a_color)
+static void draw_band(render_context_t* a_ctx, uint16_t a_w, uint16_t a_rows, const uint8_t* a_buf)
 {
-    for (int i = 0; i < a_w; i++)
-    {
-        a_ctx->buffer[i * 2] = a_color >> 8;
-        a_ctx->buffer[i * 2 + 1] = a_color & 0xFF;
-    }
-    a_ctx->buffer_offset = a_w * 2;
-    st7789_caset(a_ctx, a_x, a_x + a_w - 1);
-    
-    for (int y = 0; y < a_h; y++)
-    {
-        st7789_raset(a_ctx, a_y + y, a_y + y);
-        st7789_flush_no_clear(a_ctx);
-    }
-    a_ctx->buffer_offset = 0;
+    st7789_stream_wait_idle(a_ctx);
+
+    // setup DMA
+    dma_channel_config dma_conf = dma_channel_get_default_config(a_ctx->dma_chan);
+    channel_config_set_transfer_data_size(&dma_conf, DMA_SIZE_8);
+    channel_config_set_dreq(&dma_conf, spi_get_dreq(a_ctx->spi.spi, true));
+    channel_config_set_read_increment(&dma_conf, true);
+    channel_config_set_write_increment(&dma_conf, false);
+
+    dma_channel_configure(
+        a_ctx->dma_chan, 
+        &dma_conf,
+        &spi_get_hw(a_ctx->spi.spi)->dr,
+        a_buf,
+        (uint32_t)a_rows * a_w * 2u,
+        true);
 }
 
-static void draw_lines_vertical(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16_t a_w, uint16_t a_h, uint16_t a_color)
+void st7789_draw_rect(render_context_t* a_ctx, uint16_t a_x0, uint16_t a_x1, uint16_t a_y0, uint16_t a_y1, uint16_t a_color)
 {
-    for (int i = 0; i < a_w; i++)
-    {
-        a_ctx->buffer[i * 2] = a_color >> 8;
-        a_ctx->buffer[i * 2 + 1] = a_color & 0xFF;
-    }
-    a_ctx->buffer_offset = a_w * 2;
-    st7789_raset(a_ctx, a_y, a_y + a_h - 1);
-    
-    for (int x = 0; x < a_x; x++)
-    {
-        st7789_caset(a_ctx, a_x + x, a_x + x);
-        st7789_flush_no_clear(a_ctx);
-    }
-    a_ctx->buffer_offset = 0;
-}
+    uint16_t width  = a_x1 - a_x0 + 1;
+    uint16_t height = a_y1 - a_y0 + 1;
 
-void st7789_draw_rect(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16_t a_w, uint16_t a_h, uint16_t a_color)
-{
-    draw_lines_horizontal(a_ctx, a_x, a_y, a_w, a_h, a_color);
+    begin_draw(a_ctx, a_x0, a_x1, a_y0, a_y1);
+    for (size_t row = 0; row < a_y1 - a_y0; row += BAND_ROWS)
+    {
+        uint16_t current_rows = (height - row < BAND_ROWS) ? (height - row) : BAND_ROWS;
+        
+        uint8_t* buf = get_buffer_and_swap(a_ctx);
+        for (uint32_t i = 0; i < width * current_rows; i++)
+        {
+            buf[i * 2]     = a_color >> 8;
+            buf[i * 2 + 1] = a_color & 0xFF;
+        }
+        draw_band(a_ctx, width, current_rows, buf);
+    }
+    end_draw(a_ctx);
 }
 
 void st7789_draw_8x16glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_front_color, uint16_t a_back_color, uint16_t a_x, uint16_t a_y)
@@ -225,9 +246,4 @@ void st7789_draw_4x8glyphs(render_context_t* a_ctx, const char* a_str, uint16_t 
             }
         }
     }
-}
-
-void st7789_flush(render_context_t* a_ctx)
-{
-    a_ctx->buffer_offset = 0;
 }
