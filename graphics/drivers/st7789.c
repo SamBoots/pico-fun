@@ -148,21 +148,11 @@ static void st7789_stream_wait_idle(render_context_t* a_ctx)
     while (dma_channel_is_busy(a_ctx->dma_chan)) tight_loop_contents();
 }
 
-void st7789_draw_pixel(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16_t a_color)
+static inline void place_pixel(uint8_t* a_buf, int a_row_w, int a_x, int a_y, uint16_t a_color)
 {
-    st7789_caset(a_ctx, a_x, a_x);
-    st7789_raset(a_ctx, a_y, a_y);
-    
-    // send RAMWR + pixel data without releasing CS in between
-    uint8_t cmd = 0x2C;
-    spi_set_format(a_ctx->spi.spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
-    cs_low(a_ctx);
-    dc_low(a_ctx);
-    spi_write_blocking(a_ctx->spi.spi, &cmd, 1);
-    dc_high(a_ctx);
-    uint8_t px[2] = { a_color >> 8, a_color & 0xFF };
-    spi_write_blocking(a_ctx->spi.spi, px, 2);
-    cs_high(a_ctx);
+    int idx = (a_y * a_row_w + a_x) * 2;
+    a_buf[idx]     = a_color >> 8;
+    a_buf[idx + 1] = a_color & 0xFF;
 }
 
 static void draw_band(render_context_t* a_ctx, uint16_t a_w, uint16_t a_rows, const uint8_t* a_buf)
@@ -203,47 +193,55 @@ void st7789_draw_rect(render_context_t* a_ctx, uint16_t a_x0, uint16_t a_x1, uin
         }
         draw_band(a_ctx, width, current_rows, buf);
     }
+    st7789_stream_wait_idle(a_ctx);
     end_draw(a_ctx);
 }
 
-void st7789_draw_8x16glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_front_color, uint16_t a_back_color, uint16_t a_x, uint16_t a_y)
+static void draw_glyph(render_context_t* a_ctx, uint16_t a_glyph_w, uint16_t a_glyph_h, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_front_color, uint16_t a_back_color, uint16_t a_x, uint16_t a_y)
 {
-    int glyph_w = 8 * a_scale;
-    int glyph_h = 16 * a_scale;
+    int glyph_w = a_glyph_w * a_scale;
+    int glyph_h = a_glyph_h * a_scale;
+    int cell_w = glyph_w + a_spacing;
+
     for (int i = 0; i < a_len; i++)
     {
+        uint8_t* buf = get_buffer_and_swap(a_ctx);
         const uint8_t* glyph = font8x16_glyph(a_str[i]);
-        int x_offset = i * (glyph_w + a_spacing);
-        draw_lines_horizontal(a_ctx, a_x + x_offset - a_spacing, a_y, a_spacing, glyph_h, a_back_color);
+        
+        int lead_spacing = (i == 0) ? 0 : a_spacing;   // no gap before the first glyph
+        int rect_w  = glyph_w + lead_spacing;
+        int rect_x  = a_x + i * cell_w - lead_spacing;
+
+        for (int y = 0; y < glyph_h; y++)
+            for (int x = 0; x < lead_spacing; x++)
+                place_pixel(buf, rect_w, x, y, a_back_color);
+
         for (int y = 0; y < glyph_h; y++)
         {
             uint8_t bits = glyph[y / a_scale];
             for (int x = 0; x < glyph_w; x++)
             {
                 uint16_t color = (bits & (1 << (7 - x / a_scale))) ? a_front_color : a_back_color;
-                st7789_draw_pixel(a_ctx, a_x + x + x_offset, a_y + y, color);
+                put_px(buf, rect_w, lead_spacing + x, y, color);
             }
         }
+
+        if (i > 0) end_draw(a_ctx);
+
+        begin_draw(a_ctx, rect_x, a_y, rect_x + rect_w - 1, a_y + glyph_h - 1);
+        draw_band(a_ctx, rect_w, glyph_h, glyph);
     }
+
+    st7789_stream_wait_idle(a_ctx);
+    end_draw(a_ctx);   // release the final glyph's window/CS
+}
+
+void st7789_draw_8x16glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_front_color, uint16_t a_back_color, uint16_t a_x, uint16_t a_y)
+{
+    draw_glyph(a_ctx, 8, 16, a_str, a_len, a_spacing, a_scale, a_front_color, a_back_color, a_x, a_y);
 }
 
 void st7789_draw_4x8glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_front_color, uint16_t a_back_color, uint16_t a_x, uint16_t a_y)
 {
-    int glyph_w = 4 * a_scale;
-    int glyph_h = 8 * a_scale;
-    for (int i = 0; i < a_len; i++)
-    {
-        const uint8_t* glyph = font4x8_glyph(a_str[i]);
-        int x_offset = i * (glyph_w + a_spacing);
-        draw_lines_horizontal(a_ctx, a_x + x_offset - a_spacing, a_y, a_spacing, glyph_h, a_back_color);
-        for (int x = 0; x < glyph_w; x++)
-        {
-            uint8_t bits = glyph[x / a_scale];
-            for (int y  = 0; y < glyph_h; y++)
-            {
-                uint16_t color = (bits & (1 << (7 - y / a_scale))) ? a_front_color : a_back_color;
-                st7789_draw_pixel(a_ctx, a_x + x + x_offset, a_y + y, color);
-            }
-        }
-    }
+    draw_glyph(a_ctx, 4, 8, a_str, a_len, a_spacing, a_scale, a_front_color, a_back_color, a_x, a_y);
 }
