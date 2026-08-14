@@ -63,7 +63,7 @@ typedef struct app_context_t
     static const app_entry_t _name##_descriptor = {     \
         .name           = #_name,                       \
         .name_len       = sizeof(#_name) - 1,           \
-        .init           = _name##_init_app,                 \
+        .init           = _name##_init_app,             \
         .update         = _name##_update,               \
         .render         = _name##_render,               \
         .close          = _name##_close,                \

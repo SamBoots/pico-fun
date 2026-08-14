@@ -28,22 +28,20 @@ set(PICO_BOARD pico CACHE STRING "Board type")
 # Pull in Raspberry Pi Pico SDK (must be before project)
 include(pico_sdk_import.cmake)
 
-project(S-OS C CXX ASM)
+project(S_OS C CXX ASM)
 
 # Initialise the Raspberry Pi Pico SDK
 pico_sdk_init()
 
-# Add executable. Default name is the project name, version 0.1
+# Add executable. Default name is the project name
 
-add_executable(S-OS
+option(APP_AMMO "Add ammo app" ON)
+option(APP_SNAKE "Add snake app" ON)
+option(ADD_DEBUG_APPS "add test apps" ON)
+
+add_executable(S_OS
 main.c
 app/app_select.c
-app/ammo_counter.c
-app/snake.c
-app/pwm_test.c
-app/button_test.c
-app/app_select.c
-app/nfc_test.c
 memory/memory_arena.c
 graphics/renderer.c
 graphics/drivers/st7789.c
@@ -55,29 +53,42 @@ io/nfc.c
 audio/pwm.c
 )
 
-pico_set_program_name(S-OS "S-OS")
-pico_set_program_version(S-OS "0.1")
+if(APP_AMMO)
+    target_sources(S_OS PRIVATE app/ammo_counter.c)
+endif()
+if(APP_SNAKE)
+    target_sources(S_OS PRIVATE app/snake.c)
+endif()
+if(ADD_DEBUG_APPS)
+    target_sources(S_OS PRIVATE 
+    app/pwm_test.c
+    app/button_test.c
+    app/nfc_test.c)
+endif()
+
+pico_set_program_name(S_OS "S_OS")
+pico_set_program_version(S_OS "0.1")
 
 # Modify the below lines to enable/disable output over UART/USB
-pico_enable_stdio_uart(S-OS 0)
-pico_enable_stdio_usb(S-OS 1)
+pico_enable_stdio_uart(S_OS 0)
+pico_enable_stdio_usb(S_OS 1)
 
 # Add the standard library to the build
-target_link_libraries(S-OS
+target_link_libraries(S_OS
         pico_stdlib)
 
 # Add the standard include files to the build
-target_include_directories(S-OS PRIVATE
+target_include_directories(S_OS PRIVATE
         ${CMAKE_CURRENT_LIST_DIR}
 )
 
 # Add any user requested libraries
-target_link_libraries(S-OS 
+target_link_libraries(S_OS 
         hardware_spi
         hardware_i2c
         hardware_pwm
         hardware_dma
         )
 
-pico_add_extra_outputs(S-OS)
+pico_add_extra_outputs(S_OS)
 
