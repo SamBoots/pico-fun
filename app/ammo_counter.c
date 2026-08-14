@@ -52,29 +52,6 @@ static void gun_update_screen(gun_context_t* a_gun_ctx, render_context_t* a_ctx)
     render_flush(a_ctx);
 }
 
-static void ammo_counter_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
-{
-    const ammo_counter_params_t* params = (const ammo_counter_params_t*)a_app_params;
-    a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
-    a_app->user_data = memory_arena_allocate(a_arena, sizeof(gun_context_t));
-    a_app->update = ammo_counter_update;
-    a_app->render = ammo_counter_render;
-    a_app->close = ammo_counter_close;
-    
-    gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
-
-    gun_ctx->max_ammo = params->max_ammo;
-    gun_ctx->current_ammo = params->max_ammo;
-    gun_ctx->fire_rate_ms = 80;
-    gun_ctx->last_shot_ms = 0;
-
-    button_init_context(&gun_ctx->fire_button, 3, 10);
-    button_init_context(&gun_ctx->reload_button, 6, 10);
-
-    render_fill(a_ctx, COLOR_BLACK);
-    gun_update_screen(gun_ctx, a_ctx);
-}
-
 static app_update_status_t ammo_counter_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
 {
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
@@ -121,6 +98,29 @@ static void ammo_counter_default_params(uint8_t* a_param_buf, app_param_descript
 
     a_descs[0] = APP_PARAM("maxammo", PARAM_U8, offsetof(ammo_counter_params_t, max_ammo), 1, 99);
     a_descs[1] = APP_PARAM("scale", PARAM_U8, offsetof(ammo_counter_params_t, scale), 1, 16);
+}
+
+static void ammo_counter_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
+{
+    const ammo_counter_params_t* params = (const ammo_counter_params_t*)a_app_params;
+    a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
+    a_app->user_data = memory_arena_allocate(a_arena, sizeof(gun_context_t));
+    a_app->update = ammo_counter_update;
+    a_app->render = ammo_counter_render;
+    a_app->close = ammo_counter_close;
+    
+    gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
+
+    gun_ctx->max_ammo = params->max_ammo;
+    gun_ctx->current_ammo = params->max_ammo;
+    gun_ctx->fire_rate_ms = 80;
+    gun_ctx->last_shot_ms = 0;
+
+    button_init_context(&gun_ctx->fire_button, 3, 10);
+    button_init_context(&gun_ctx->reload_button, 6, 10);
+
+    render_fill(a_ctx, COLOR_BLACK);
+    gun_update_screen(gun_ctx, a_ctx);
 }
 
 APP_REGISTER(ammo_counter);

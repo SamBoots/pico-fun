@@ -3,6 +3,7 @@
 
 typedef struct render_context_t render_context_t;
 typedef struct memory_arena_t memory_arena_t;
+typedef struct app_context_t app_context_t;
 
 typedef enum { APP_OK, APP_ERR, APP_RENDER, APP_EXIT, APP_EXIT_NO_CLOSE } app_update_status_t;
 
@@ -28,10 +29,10 @@ typedef struct app_param_descriptor_t
         .max         = a_max                                 \
     })
 
-typedef void (*app_init_t)(struct app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params);
-typedef void (*app_update_t)(struct app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms);
-typedef void (*app_render_t)(struct app_context_t* a_app, render_context_t* a_ctx);
-typedef void (*app_close_t)(struct app_context_t* a_app);
+typedef void (*app_init_t)(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params);
+typedef app_update_status_t (*app_update_t)(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms);
+typedef void (*app_render_t)(app_context_t* a_app, render_context_t* a_ctx);
+typedef void (*app_close_t)(app_context_t* a_app);
 typedef void (*app_default_sizes)(size_t* a_param_buf_size, size_t* a_desc_count);
 typedef void (*app_default_params)(uint8_t* a_param_buf, app_param_descriptor_t* a_descs);
 
@@ -51,18 +52,18 @@ typedef struct app_context_t
 {
     uint32_t memory_arena_marker; // start of the app's memory
     uint8_t* user_data;
-    app_render_t update;
+    app_update_t update;
     app_render_t render;
     app_close_t close;
 } app_context_t;
 
 #define STRLEN(s) (sizeof(s) - 1)
-#define APP_REGISTER(_name)                      \
-    __attribute__((section("app_entries"), used))      \
-    static const app_entry_t _name##_descriptor = {   \
+#define APP_REGISTER(_name)                             \
+    __attribute__((section("app_entries"), used))       \
+    static const app_entry_t _name##_descriptor = {     \
         .name           = #_name,                       \
-        .name_len       = STRLEN(#_name),               \
-        .init           = _name##_init,                 \
+        .name_len       = sizeof(#_name) - 1,           \
+        .init           = _name##_init_app,                 \
         .update         = _name##_update,               \
         .render         = _name##_render,               \
         .close          = _name##_close,                \

@@ -107,42 +107,6 @@ static void button_draw_areas(render_context_t* a_ctx, button_test_context_t* a_
     }
 }
 
-static void button_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
-{
-    a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
-    a_app->user_data = memory_arena_allocate(a_arena, sizeof(button_test_context_t));
-    a_app->update = button_test_update;
-    a_app->render = button_test_render;
-    a_app->close = button_test_close;
-    
-    const button_test_params_t* params = (const button_test_params_t*)a_app_params;
-    button_test_context_t* app_ctx = (button_test_context_t*)a_app->user_data;
-    app_ctx->button_count = params->button_count;
-    
-    app_ctx->height_split = a_ctx->height > a_ctx->width;
-    if (app_ctx->height_split)
-    {
-        app_ctx->sector_width = a_ctx->width / 2;
-        app_ctx->sector_height = a_ctx->height / 4;
-    }
-    else
-    {
-        app_ctx->sector_width = a_ctx->width / 4;
-        app_ctx->sector_height = a_ctx->height / 2;
-    }
-
-    for (size_t i = 0; i < params->button_count; i++)
-        button_init_context(&app_ctx->buttons[i], params->button_pin[i], 20);
-
-    for (size_t i = 0; i < BUTTON_MAX; i++)
-    {
-        app_ctx->button_new_statuses[i] = BUTTON_RELEASE;
-        app_ctx->button_old_statuses[i] = BUTTON_PRESSED;
-    }
-
-    button_draw_areas(a_ctx, app_ctx, BUTTON_MAX);
-}
-
 static app_update_status_t button_test_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
 {
     button_test_context_t* app_ctx = (button_test_context_t*)a_app->user_data;
@@ -207,6 +171,42 @@ static void button_test_default_params(uint8_t* a_param_buf, app_param_descripto
     a_descs[6] = APP_PARAM("pin5", PARAM_U8, offsetof(button_test_params_t, button_pin[5]), 1, 26);
     a_descs[7] = APP_PARAM("pin6", PARAM_U8, offsetof(button_test_params_t, button_pin[6]), 1, 26);
     a_descs[8] = APP_PARAM("pin7", PARAM_U8, offsetof(button_test_params_t, button_pin[7]), 1, 26);
+}
+
+static void button_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
+{
+    a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
+    a_app->user_data = memory_arena_allocate(a_arena, sizeof(button_test_context_t));
+    a_app->update = button_test_update;
+    a_app->render = button_test_render;
+    a_app->close = button_test_close;
+    
+    const button_test_params_t* params = (const button_test_params_t*)a_app_params;
+    button_test_context_t* app_ctx = (button_test_context_t*)a_app->user_data;
+    app_ctx->button_count = params->button_count;
+    
+    app_ctx->height_split = a_ctx->height > a_ctx->width;
+    if (app_ctx->height_split)
+    {
+        app_ctx->sector_width = a_ctx->width / 2;
+        app_ctx->sector_height = a_ctx->height / 4;
+    }
+    else
+    {
+        app_ctx->sector_width = a_ctx->width / 4;
+        app_ctx->sector_height = a_ctx->height / 2;
+    }
+
+    for (size_t i = 0; i < params->button_count; i++)
+        button_init_context(&app_ctx->buttons[i], params->button_pin[i], 20);
+
+    for (size_t i = 0; i < BUTTON_MAX; i++)
+    {
+        app_ctx->button_new_statuses[i] = BUTTON_RELEASE;
+        app_ctx->button_old_statuses[i] = BUTTON_PRESSED;
+    }
+
+    button_draw_areas(a_ctx, app_ctx, BUTTON_MAX);
 }
 
 APP_REGISTER(button_test);

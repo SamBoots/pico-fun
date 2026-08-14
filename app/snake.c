@@ -111,33 +111,6 @@ static void snake_start_game(snake_context_t* a_snake_ctx)
     snake_place_apple(a_snake_ctx);
 }
 
-void snake_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
-{
-    const snake_params_t* params = (const snake_params_t*)a_app_params;
-
-    a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
-    a_app->user_data = memory_arena_allocate(a_arena, sizeof(snake_context_t));
-    a_app->update = snake_update;
-    a_app->render = snake_render;
-    a_app->close = snake_close;
-    
-    snake_context_t* snake_ctx = (snake_context_t*)a_app->user_data;
-    snake_ctx->ms_last_frame = 0;
-    snake_ctx->ms_per_frame = 250;
-
-    snake_ctx->map_scale = params->scale;
-    snake_ctx->map_x = a_ctx->width / snake_ctx->map_scale;
-    snake_ctx->map_y = a_ctx->height / snake_ctx->map_scale;
-    snake_ctx->map = memory_arena_allocate(a_arena, (snake_ctx->map_x * snake_ctx->map_y + 7) / 8);
-
-    button_init_context(&snake_ctx->north_button, 2, 10);
-    button_init_context(&snake_ctx->south_button, 3, 10);
-    button_init_context(&snake_ctx->west_button, 9, 10);
-    button_init_context(&snake_ctx->east_button, 13, 10);
-
-    snake_start_game(snake_ctx);
-}
-
 app_update_status_t snake_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
 {
     snake_context_t* snake_ctx = (snake_context_t*)a_app->user_data;
@@ -215,6 +188,33 @@ void snake_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
     defaults->scale = 2;
 
     a_descs[0] = APP_PARAM("scale", PARAM_U8, offsetof(snake_params_t, scale), 1, 16);
+}
+
+void snake_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
+{
+    const snake_params_t* params = (const snake_params_t*)a_app_params;
+
+    a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
+    a_app->user_data = memory_arena_allocate(a_arena, sizeof(snake_context_t));
+    a_app->update = snake_update;
+    a_app->render = snake_render;
+    a_app->close = snake_close;
+    
+    snake_context_t* snake_ctx = (snake_context_t*)a_app->user_data;
+    snake_ctx->ms_last_frame = 0;
+    snake_ctx->ms_per_frame = 250;
+
+    snake_ctx->map_scale = params->scale;
+    snake_ctx->map_x = a_ctx->width / snake_ctx->map_scale;
+    snake_ctx->map_y = a_ctx->height / snake_ctx->map_scale;
+    snake_ctx->map = memory_arena_allocate(a_arena, (snake_ctx->map_x * snake_ctx->map_y + 7) / 8);
+
+    button_init_context(&snake_ctx->north_button, 2, 10);
+    button_init_context(&snake_ctx->south_button, 3, 10);
+    button_init_context(&snake_ctx->west_button, 9, 10);
+    button_init_context(&snake_ctx->east_button, 13, 10);
+
+    snake_start_game(snake_ctx);
 }
 
 APP_REGISTER(snake);
