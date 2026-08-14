@@ -1,6 +1,5 @@
 #include "pico/stdlib.h"
 #include "app.h"
-#include "button_test.h"
 #include "../io/io_types.h"
 #include "../io/button.h"
 #include "../memory/memory_arena.h"
@@ -108,7 +107,7 @@ static void button_draw_areas(render_context_t* a_ctx, button_test_context_t* a_
     }
 }
 
-void button_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
+static void button_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
 {
     a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
     a_app->user_data = memory_arena_allocate(a_arena, sizeof(button_test_context_t));
@@ -144,7 +143,7 @@ void button_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_
     button_draw_areas(a_ctx, app_ctx, BUTTON_MAX);
 }
 
-app_update_status_t button_test_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
+static app_update_status_t button_test_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
 {
     button_test_context_t* app_ctx = (button_test_context_t*)a_app->user_data;
     
@@ -174,26 +173,26 @@ app_update_status_t button_test_update(app_context_t* a_app, memory_arena_t* a_a
     return status;
 }
 
-void button_test_render(app_context_t* a_app, render_context_t* a_ctx)
+static void button_test_render(app_context_t* a_app, render_context_t* a_ctx)
 {
     button_test_context_t* app_ctx = (button_test_context_t*)a_app->user_data;
     button_draw_areas(a_ctx, app_ctx, app_ctx->button_count);
 }
 
-void button_test_close(app_context_t* a_app)
+static void button_test_close(app_context_t* a_app)
 {
     button_test_context_t* app_ctx = (button_test_context_t*)a_app->user_data;
     for (size_t i = 0; i < app_ctx->button_count; i++)
         button_free_context(&app_ctx->buttons[i]);
 }
 
-void button_test_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
+static void button_test_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
 {
     *a_param_buf_size = sizeof(button_test_params_t);
     *a_desc_count = 8;
 }
 
-void button_test_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
+static void button_test_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
 {
     button_test_params_t* defaults = (button_test_params_t*)a_param_buf;
     defaults->button_count = 1;
@@ -209,3 +208,5 @@ void button_test_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_
     a_descs[7] = APP_PARAM("pin6", PARAM_U8, offsetof(button_test_params_t, button_pin[6]), 1, 26);
     a_descs[8] = APP_PARAM("pin7", PARAM_U8, offsetof(button_test_params_t, button_pin[7]), 1, 26);
 }
+
+APP_REGISTER(button_test);

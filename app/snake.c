@@ -1,7 +1,6 @@
 #include <stdlib.h>
 #include "pico/stdlib.h"
 #include "app.h"
-#include "snake.h"
 #include "../graphics/render_types.h"
 #include "../graphics/renderer.h"
 #include "../io/io_types.h"
@@ -217,3 +216,5 @@ void snake_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
 
     a_descs[0] = APP_PARAM("scale", PARAM_U8, offsetof(snake_params_t, scale), 1, 16);
 }
+
+APP_REGISTER(snake);

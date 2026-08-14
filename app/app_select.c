@@ -1,11 +1,6 @@
 #include "pico/stdlib.h"
 #include "app.h"
 #include "app_select.h"
-#include "ammo_counter.h"
-#include "snake.h"
-#include "pwm_test.h"
-#include "nfc_test.h"
-#include "button_test.h"
 #include "../io/io_types.h"
 #include "../io/button.h"
 #include "../io/fs.h"
@@ -17,37 +12,12 @@
 
 typedef enum { CURSOR_TYPE_APP = 0, CURSOR_TYPE_PARAM = 1, CURSOR_TYPE_PARAM_VAL = 2, CURSOR_TYPE_SAVE_DEFAULT = 3, CURSOR_TYPE_RELOAD_DEFAULT = 4, CURSOR_TYPE_MAX = 5 } cursor_type_t;
 
-typedef struct app_descriptor_t
-{
-    const char* name;
-    uint16_t name_len;
-    app_init_t init;
-    void (*default_sizes)(size_t* a_param_buf_size, size_t* a_desc_count);
-    void (*default_params)(uint8_t* a_param_buf, app_param_descriptor_t* a_descs);
-} app_descriptor_t;
-
 #define PARAM_BUF_SIZE 64
 #define PARAM_MAX_DESCRIPTORS 16
 #define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 
-#define APP_ENTRY(a_name, a_prefix)                    \
-    {                                                  \
-        .name             = a_name,                    \
-        .name_len         = sizeof(a_name) - 1,        \
-        .init             = a_prefix##_init_app,       \
-        .default_sizes    = a_prefix##_default_sizes,  \
-        .default_params   = a_prefix##_default_params  \
-    }
-
-static app_descriptor_t s_app_registery[] = 
-{
-    APP_ENTRY("ammo", ammo_counter),
-    APP_ENTRY("snake", snake),
-    APP_ENTRY("pwm", pwm_test),
-    APP_ENTRY("nfc", nfc_test),
-    APP_ENTRY("button", button_test)
-};
-static const uint8_t s_app_count = ARRAY_LENGTH(s_app_registery);
+const app_entry_t* app_entry_begin(void) { return &__start_app_entries; }
+const app_entry_t* app_entry_end(void)   { return &__stop_app_entries; }
 
 typedef struct app_select_context_t
 {
@@ -60,6 +30,8 @@ typedef struct app_select_context_t
     cursor_type_t cursor;
     int16_t cursor_app;
     int16_t cursor_param;
+
+    uint16_t app_count;
 
     uint8_t param_buf[PARAM_BUF_SIZE];
     size_t param_buf_size;
@@ -83,9 +55,9 @@ static inline int wrapminmax(int a_val, int a_min, int a_max)
     return ((((a_val - a_min) % range) + range) % range) + a_min;
 }
 
-static inline const app_descriptor_t* GetAppCursor(app_select_context_t* a_app_select)
+static inline const app_entry_t* GetAppCursor(app_select_context_t* a_app_select)
 {
-    return &s_app_registery[a_app_select->cursor_app];
+    return &app_entry_begin()[a_app_select->cursor_app];
 }
 
 static inline const app_param_descriptor_t* GetParamCursor(app_select_context_t* a_app_select)
@@ -110,7 +82,7 @@ static inline const bool get_bool_param(const app_param_descriptor_t* a_desc, vo
 
 static inline void display_app_info(app_select_context_t* a_app_select, render_context_t* a_ctx)
 {
-    const app_descriptor_t* cursor = GetAppCursor(a_app_select);
+    const app_entry_t* cursor = GetAppCursor(a_app_select);
     uint16_t select_color = COLOR_GREEN;
     if (a_app_select->cursor == CURSOR_TYPE_APP)
         select_color = COLOR_RED;
@@ -200,13 +172,13 @@ static inline void modify_param(void* a_data, param_type_t a_type, int a_incr, i
 
 static inline void load_app_params(app_select_context_t* a_app_select)
 {
-    s_app_registery[a_app_select->cursor_app].default_sizes(&a_app_select->param_buf_size, &a_app_select->app_desc_count);
+    const app_entry_t* cursor = GetAppCursor(a_app_select);
+    cursor->default_sizes(&a_app_select->param_buf_size, &a_app_select->app_desc_count);
 
     // TODO, ERROR CHECK SIZES HERE
 
-    s_app_registery[a_app_select->cursor_app].default_params(a_app_select->param_buf, a_app_select->app_descs);
+    cursor->default_params(a_app_select->param_buf, a_app_select->app_descs);
 
-    const app_descriptor_t* cursor = GetAppCursor(a_app_select);
     // override default params, maybe make it a different function call?
     fs_read(cursor->name, cursor->name_len, a_app_select->param_buf, a_app_select->param_buf_size);
 }
@@ -216,7 +188,7 @@ static void move_cursor(app_select_context_t* a_app_select, int a_incr)
     if (a_app_select->cursor == CURSOR_TYPE_APP)
     {
         int new_pos = a_app_select->cursor_app + a_incr;
-        a_app_select->cursor_app = wrap(a_app_select->cursor_app + a_incr, s_app_count);
+        a_app_select->cursor_app = wrap(a_app_select->cursor_app + a_incr, a_app_select->app_count);
         a_app_select->cursor_param = 0;
         load_app_params(a_app_select);
     }
@@ -231,13 +203,12 @@ static void move_cursor(app_select_context_t* a_app_select, int a_incr)
     }
     else if (a_app_select->cursor == CURSOR_TYPE_SAVE_DEFAULT)
     {
-        const app_descriptor_t* app = GetAppCursor(a_app_select);
+        const app_entry_t* app = GetAppCursor(a_app_select);
         fs_write(app->name, app->name_len, a_app_select->param_buf, PARAM_BUF_SIZE);
     }
     else if (a_app_select->cursor == CURSOR_TYPE_RELOAD_DEFAULT)
     {
-        const app_descriptor_t* app = GetAppCursor(a_app_select);
-        s_app_registery[a_app_select->cursor_app].default_params(a_app_select->param_buf, a_app_select->app_descs);
+        GetAppCursor(a_app_select)->default_params(a_app_select->param_buf, a_app_select->app_descs);
     }
 }
 
@@ -251,7 +222,7 @@ static void change_app(app_select_context_t* a_app_select, app_context_t* a_app,
     memory_arena_set_marker(a_arena, a_app->memory_arena_marker);
     memory_set(a_app, 0, sizeof(a_app));
     
-    s_app_registery[cursor].init(a_app, a_arena, a_ctx, param_buf);
+    GetAppCursor(a_app_select)->init(a_app, a_arena, a_ctx, param_buf);
 }
 
 void app_select_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
@@ -272,6 +243,7 @@ void app_select_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_c
     button_init_context(&app_select->prev_button, 4, 10);
     button_init_context(&app_select->select_app_button, 9, 10);
 
+    app_select->app_count = (app_entry_end() - app_entry_begin()) / sizeof(app_entry_t);
     move_cursor(app_select, 0);
     app_select_render(a_app, a_ctx);
 }

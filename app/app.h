@@ -28,15 +28,49 @@ typedef struct app_param_descriptor_t
         .max         = a_max                                 \
     })
 
+typedef void (*app_init_t)(struct app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params);
+typedef void (*app_update_t)(struct app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms);
+typedef void (*app_render_t)(struct app_context_t* a_app, render_context_t* a_ctx);
+typedef void (*app_close_t)(struct app_context_t* a_app);
+typedef void (*app_default_sizes)(size_t* a_param_buf_size, size_t* a_desc_count);
+typedef void (*app_default_params)(uint8_t* a_param_buf, app_param_descriptor_t* a_descs);
+
+typedef struct app_entry_t
+{
+    const char* name;
+    int16_t name_len;
+    app_init_t init;
+    app_update_t update;
+    app_render_t render;
+    app_close_t close;
+    app_default_sizes default_sizes;
+    app_default_params default_params;
+} app_entry_t;
+
 typedef struct app_context_t
 {
     uint32_t memory_arena_marker; // start of the app's memory
     uint8_t* user_data;
-    app_update_status_t (*update)(struct app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms);
-    void (*render)(struct app_context_t* a_app, render_context_t* a_ctx);
-    void (*close)(struct app_context_t* a_app);
+    app_render_t update;
+    app_render_t render;
+    app_close_t close;
 } app_context_t;
 
-typedef void (*app_init_t)(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params);
+#define STRLEN(s) (sizeof(s) - 1)
+#define APP_REGISTER(_name)                      \
+    __attribute__((section("app_entries"), used))      \
+    static const app_entry_t _name##_descriptor = {   \
+        .name           = #_name,                       \
+        .name_len       = STRLEN(#_name),               \
+        .init           = _name##_init,                 \
+        .update         = _name##_update,               \
+        .render         = _name##_render,               \
+        .close          = _name##_close,                \
+        .default_sizes  = _name##_default_sizes,        \
+        .default_params = _name##_default_params        \
+    };
+
+extern app_entry_t __start_app_entries;
+extern app_entry_t __stop_app_entries;
 
 #endif // APP_H

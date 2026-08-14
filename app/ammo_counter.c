@@ -1,6 +1,5 @@
 #include "pico/stdlib.h"
 #include "app.h"
-#include "ammo_counter.h"
 #include "../graphics/render_types.h"
 #include "../graphics/renderer.h"
 #include "../io/io_types.h"
@@ -53,7 +52,7 @@ static void gun_update_screen(gun_context_t* a_gun_ctx, render_context_t* a_ctx)
     render_flush(a_ctx);
 }
 
-void ammo_counter_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
+static void ammo_counter_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
 {
     const ammo_counter_params_t* params = (const ammo_counter_params_t*)a_app_params;
     a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
@@ -76,7 +75,7 @@ void ammo_counter_init_app(app_context_t* a_app, memory_arena_t* a_arena, render
     gun_update_screen(gun_ctx, a_ctx);
 }
 
-app_update_status_t ammo_counter_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
+static app_update_status_t ammo_counter_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
 {
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
     button_update(&gun_ctx->fire_button, a_now_ms);
@@ -95,26 +94,26 @@ app_update_status_t ammo_counter_update(app_context_t* a_app, memory_arena_t* a_
     return APP_OK;
 }
 
-void ammo_counter_render(app_context_t* a_app, render_context_t* a_ctx)
+static void ammo_counter_render(app_context_t* a_app, render_context_t* a_ctx)
 {
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
     gun_update_screen(gun_ctx, a_ctx);
 }
 
-void ammo_counter_close(app_context_t* a_app)
+static void ammo_counter_close(app_context_t* a_app)
 {
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
     button_free_context(&gun_ctx->fire_button);
     button_free_context(&gun_ctx->reload_button);
 }
 
-void ammo_counter_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
+static void ammo_counter_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
 {
     *a_param_buf_size = sizeof(ammo_counter_params_t);
     *a_desc_count = 2;
 }
 
-void ammo_counter_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
+static void ammo_counter_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
 {
     ammo_counter_params_t* defaults = (ammo_counter_params_t*)a_param_buf;
     defaults->max_ammo = 42;
@@ -123,3 +122,5 @@ void ammo_counter_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a
     a_descs[0] = APP_PARAM("maxammo", PARAM_U8, offsetof(ammo_counter_params_t, max_ammo), 1, 99);
     a_descs[1] = APP_PARAM("scale", PARAM_U8, offsetof(ammo_counter_params_t, scale), 1, 16);
 }
+
+APP_REGISTER(ammo_counter);
