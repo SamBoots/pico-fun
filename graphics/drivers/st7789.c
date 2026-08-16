@@ -75,13 +75,13 @@ void st7789_init(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a
     a_ctx->pixel_size = 8; // in bits, maybe 16
     a_ctx->mhz = a_mhz;
 
-    a_ctx->spi.pin_clk = 18;
-    a_ctx->spi.pin_din = 19;
-    a_ctx->spi.pin_dc = 20;
-    a_ctx->spi.pin_cs = 17;
-    a_ctx->spi.pin_rst = 21;
-    a_ctx->spi.pin_bl = 22;
-    a_ctx->spi.spi = spi0; // just do SPI0 who cares
+    a_ctx->spi.pin_clk = 10;
+    a_ctx->spi.pin_din = 11;
+    a_ctx->spi.pin_dc = 8;
+    a_ctx->spi.pin_cs = 9;
+    a_ctx->spi.pin_rst = 12;
+    a_ctx->spi.pin_bl = 13;
+    a_ctx->spi.spi = spi1; // just do SPI0 who cares
     a_ctx->buffer_offset = 0;
     memset(&a_ctx->buffer, 0, sizeof(a_ctx->buffer));
 
@@ -108,7 +108,7 @@ void st7789_init(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a
     sleep_ms(10);
 
     st7789_send_cmd(a_ctx, 0x36);                     // MADCTL
-    st7789_send_data(a_ctx, (uint8_t[]){ 0x00 }, 1);  // normal orientation
+    st7789_send_data(a_ctx, (uint8_t[]){ 0x60 }, 1);  // normal orientation
     sleep_ms(10);
 
     st7789_send_cmd(a_ctx, 0x21); sleep_ms(150);  // INVON

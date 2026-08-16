@@ -67,8 +67,8 @@ static bool tetris_can_move(tetris_context_t* a_tetris_ctx, uint16_t new_x, uint
     {
         if ((piece >> (15 - i)) & 1)
         {
-            uint16_t pixel_x = new_x + (i % 4);
-            uint16_t pixel_y = new_y + (i / 4);
+            int pixel_x = (int)new_x + (i % 4);
+            int pixel_y = (int)new_y + (i / 4);
             if (pixel_x < 0 || pixel_x >= a_tetris_ctx->map_x || pixel_y >= a_tetris_ctx->map_y)
             {
                 return false;
@@ -165,10 +165,10 @@ void tetris_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_conte
     tetris_ctx->map_y = a_ctx->height / tetris_ctx->map_scale;
     tetris_ctx->map = memory_arena_allocate(a_arena, (tetris_ctx->map_x * tetris_ctx->map_y + 7) / 8);
 
-    button_init_context(&tetris_ctx->rotate_button, 2, 10);
-    button_init_context(&tetris_ctx->suiside_button, 3, 10);
-    button_init_context(&tetris_ctx->left_button, 9, 10);
-    button_init_context(&tetris_ctx->right_button, 13, 10);
+    button_init_context(&tetris_ctx->rotate_button, 15, 10);
+    button_init_context(&tetris_ctx->suiside_button, 17, 10);
+    button_init_context(&tetris_ctx->left_button, 19, 10);
+    button_init_context(&tetris_ctx->right_button, 21, 10);
 
     tetris_start_game(tetris_ctx);
 }

@@ -1,6 +1,7 @@
 #define TEST_W 240
-#define TEST_H 280
- 
+#define TEST_H 240
+
+#include "pico/cyw43_arch.h"
 #include "pico/stdlib.h"
 #include "graphics/render_types.h"
 #include "graphics/renderer.h"
@@ -49,8 +50,8 @@ bool get_delay_bool_value(delay_bool_t* a_bool, uint32_t a_now_ms)
 // add all apps you want to use here
 app_init_t app_inits[] =
 {
-    tetris_init_app,
     ammo_counter_init_app,
+    tetris_init_app,
     snake_init_app
 };
 
@@ -74,17 +75,16 @@ int main(void)
     uint16_t current_app = 0;
 
     render_load_func(&g_render_ctx, DRIVER_ST7789);
-    render_init_context(&g_render_ctx, TEST_W, TEST_H, 0, 20, 100 * 1000);
+    render_init_context(&g_render_ctx, TEST_W, TEST_H, 0, 0, 10);
     app_context_t app;
     memory_set(&app, 0, sizeof(app));
 
     button_context_t switch_app_button;
-    button_init_context(&switch_app_button, 2, 30);
+    button_init_context(&switch_app_button, 21, 30);
     switch_app(&app, app_inits[current_app++]);
 
     delay_bool_t led_bool = create_delay_bool_value(500, false);
-    gpio_init(PICO_DEFAULT_LED_PIN);
-    gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
+    cyw43_arch_init();
 
     while (true)
     {
@@ -102,6 +102,6 @@ int main(void)
         if (app.update(&app, now_ms))
             app.render(&app, &g_render_ctx);
 
-        gpio_put(PICO_DEFAULT_LED_PIN, get_delay_bool_value(&led_bool, now_ms));
+        cyw43_arch_gpio_put(CYW43_WL_GPIO_LED_PIN, get_delay_bool_value(&led_bool, now_ms));
     }
 }

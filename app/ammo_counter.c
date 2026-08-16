@@ -43,7 +43,7 @@ static void gun_update_screen(gun_context_t* a_gun_ctx, render_context_t* a_ctx)
         digits[1] = '0' + (a_gun_ctx->current_ammo % 10);
     }
     uint16_t scale = 12;
-    render_8x16glyphs(a_ctx, digits, 2, 1, scale, COLOR_RED, COLOR_BLACK, 0, 0);
+    render_8x16glyphs(a_ctx, digits, 2, 1, scale, COLOR_RED, COLOR_BLACK, 24, 24);
     render_flush(a_ctx);
 }
 
@@ -62,8 +62,8 @@ void ammo_counter_init_app(app_context_t* a_app, memory_arena_t* a_arena, render
     gun_ctx->fire_rate_ms = 80;
     gun_ctx->last_shot_ms = 0;
 
-    button_init_context(&gun_ctx->fire_button, 3, 10);
-    button_init_context(&gun_ctx->reload_button, 6, 10);
+    button_init_context(&gun_ctx->fire_button, 15, 10);
+    button_init_context(&gun_ctx->reload_button, 17, 10);
 
     render_fill(a_ctx, COLOR_BLACK);
     gun_update_screen(gun_ctx, a_ctx);
