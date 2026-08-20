@@ -27,8 +27,7 @@ void ssd1306_init(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t 
     a_ctx->x_offset = a_x_offset;
     a_ctx->y_offset = a_y_offset;
     a_ctx->pixel_size = 1;
-    a_ctx->mhz = 0;  // unused for I2C
-    (void)a_mhz;
+    a_ctx->mhz = a_mhz;  // unused for I2C
  
     a_ctx->i2c.pin_sda = 4;
     a_ctx->i2c.pin_scl = 5;
@@ -68,7 +67,7 @@ void ssd1306_init(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t 
 
 void ssd1306_draw_pixel(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16_t a_color)
 {
-    uint8_t* dst = &a_ctx->buffer[1];
+    uint8_t* dst = &a_ctx->buffer[0][1];
     uint32_t byte  = (a_y / 8) * a_ctx->width + a_x;
     uint32_t bit   = 1 << (a_y % 8);
     dst[byte] = (dst[byte] & ~bit) | (!!a_color * bit);
@@ -135,6 +134,6 @@ void ssd1306_flush(render_context_t* a_ctx)
     i2c_write_blocking(i2c0, a_ctx->i2c.address, col_cmd,  4, false);
     i2c_write_blocking(i2c0, a_ctx->i2c.address, page_cmd, 4, false);
 
-    a_ctx->buffer[0] = 0x40;
-    i2c_write_blocking(i2c0, a_ctx->i2c.address, a_ctx->buffer, pages * w + 1, false);
+    a_ctx->buffer[0][0] = 0x40;
+    i2c_write_blocking(i2c0, a_ctx->i2c.address, a_ctx->buffer[0], pages * w + 1, false);
 }

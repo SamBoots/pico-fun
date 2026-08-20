@@ -61,20 +61,6 @@ static void st7789_raset(const render_context_t* a_ctx, uint16_t a_ys, uint16_t 
     st7789_send_data(a_ctx, data, sizeof(data));
 }
 
-static void st7789_flush_no_clear(render_context_t* a_ctx)
-{
-    if (a_ctx->buffer_offset == 0) return;
-
-    uint8_t cmd = 0x2C;
-    spi_set_format(a_ctx->spi.spi, 8, SPI_CPOL_0, SPI_CPHA_0, SPI_MSB_FIRST);
-    cs_low(a_ctx);
-    dc_low(a_ctx);
-    spi_write_blocking(a_ctx->spi.spi, &cmd, 1);
-    dc_high(a_ctx);
-    spi_write_blocking(a_ctx->spi.spi, a_ctx->buffer, a_ctx->buffer_offset);
-    cs_high(a_ctx);
-}
-
 void st7789_init(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a_x_offset, uint16_t a_y_offset, uint16_t a_mhz)
 {
     a_ctx->width = a_w;
@@ -135,7 +121,7 @@ static void begin_draw(render_context_t* a_ctx, uint16_t a_x0, uint16_t a_x1, ui
     cs_low(a_ctx);
     dc_low(a_ctx);
     st7789_send_cmd(a_ctx, 0x2C);
-    dc_high(a_ctx)
+    dc_high(a_ctx);
 }
 
 static void end_draw(render_context_t* a_ctx)
@@ -244,4 +230,10 @@ void st7789_draw_8x16glyphs(render_context_t* a_ctx, const char* a_str, uint16_t
 void st7789_draw_4x8glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_front_color, uint16_t a_back_color, uint16_t a_x, uint16_t a_y)
 {
     draw_glyph(a_ctx, 4, 8, a_str, a_len, a_spacing, a_scale, a_front_color, a_back_color, a_x, a_y);
+}
+
+void st7789_flush(render_context_t* a_ctx)
+{
+    // st7789's max screen is expensive to keep in memory so we draw using band buffers.
+    return;
 }

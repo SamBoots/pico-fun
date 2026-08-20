@@ -14,7 +14,6 @@ int render_load_func(render_context_t* a_ctx, SCREEN_DRIVER a_driver)
     {
     case DRIVER_SSD1306:
         a_ctx->init = ssd1306_init;
-        a_ctx->draw_pixel = ssd1306_draw_pixel;
         a_ctx->draw_rect = ssd1306_draw_rect;
         a_ctx->draw_8x16glyphs = ssd1306_draw_8x16glyphs;
         a_ctx->draw_4x8glyphs = ssd1306_draw_4x8glyphs;
@@ -22,7 +21,6 @@ int render_load_func(render_context_t* a_ctx, SCREEN_DRIVER a_driver)
         break;
     case DRIVER_ST7789:
         a_ctx->init = st7789_init;
-        a_ctx->draw_pixel = st7789_draw_pixel;
         a_ctx->draw_rect = st7789_draw_rect;
         a_ctx->draw_8x16glyphs = st7789_draw_8x16glyphs;
         a_ctx->draw_4x8glyphs = st7789_draw_4x8glyphs;
@@ -38,12 +36,6 @@ int render_load_func(render_context_t* a_ctx, SCREEN_DRIVER a_driver)
 int render_init_context(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a_x_offset, uint16_t a_y_offset, uint16_t a_mhz)
 {
     a_ctx->init(a_ctx, a_w, a_h, a_x_offset, a_y_offset, a_mhz);
-    return 1;
-}
-
-int render_draw_pixel(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16_t a_color)
-{
-    a_ctx->draw_pixel(a_ctx, a_x, a_y, a_color);
     return 1;
 }
 
@@ -78,16 +70,14 @@ int render_8x16glyphs_2x2border(render_context_t* a_ctx, const char* a_str, uint
     render_8x16glyphs(a_ctx, a_str, a_len, a_spacing, a_scale, a_front_color, a_back_color, a_x + padding, a_y + padding);
     // now draw border
     
-    for (int x = border_x0; x < border_x1; x++)
-    {
-        a_ctx->draw_pixel(a_ctx, x, border_y0, a_front_color);
-        a_ctx->draw_pixel(a_ctx, x, border_y1, a_front_color);
-    }
-    for (int y = border_y0; y < border_y1; y++)
-    {
-        a_ctx->draw_pixel(a_ctx, border_x0, y, a_front_color);
-        a_ctx->draw_pixel(a_ctx, border_x1, y, a_front_color);
-    }
+    uint16_t border_width = border_x1 - border_x0;
+    uint16_t border_height = border_y1 - border_y0;
+
+    a_ctx->draw_rect(a_ctx, border_x0, border_y0, border_width, a_scale, a_front_color);
+    a_ctx->draw_rect(a_ctx, border_x0, border_y0, a_scale, border_height, a_front_color);
+
+    a_ctx->draw_rect(a_ctx, border_x0, border_y1, border_width, a_scale, a_front_color);
+    a_ctx->draw_rect(a_ctx, border_x1, border_y0, a_scale, border_height, a_front_color);
 
     return 1;
 }
@@ -111,16 +101,14 @@ int render_4x8glyphs_2x2border(render_context_t* a_ctx, const char* a_str, uint1
     a_ctx->draw_4x8glyphs(a_ctx, a_str, a_len, a_spacing, a_scale, a_front_color, a_back_color, a_x + padding, a_y + padding);
     // now draw border
     
-    for (int x = border_x0; x < border_x1; x++)
-    {
-        a_ctx->draw_pixel(a_ctx, x, border_y0, a_front_color);
-        a_ctx->draw_pixel(a_ctx, x, border_y1, a_front_color);
-    }
-    for (int y = border_y0; y < border_y1; y++)
-    {
-        a_ctx->draw_pixel(a_ctx, border_x0, y, a_front_color);
-        a_ctx->draw_pixel(a_ctx, border_x1, y, a_front_color);
-    }
+    uint16_t border_width = border_x1 - border_x0;
+    uint16_t border_height = border_y1 - border_y0;
+
+    a_ctx->draw_rect(a_ctx, border_x0, border_y0, border_width, a_scale, a_front_color);
+    a_ctx->draw_rect(a_ctx, border_x0, border_y0, a_scale, border_height, a_front_color);
+
+    a_ctx->draw_rect(a_ctx, border_x0, border_y1, border_width, a_scale, a_front_color);
+    a_ctx->draw_rect(a_ctx, border_x1, border_y0, a_scale, border_height, a_front_color);
 
     return 1;
 }
