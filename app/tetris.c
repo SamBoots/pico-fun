@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include "pico/stdlib.h"
 #include "app.h"
@@ -33,11 +34,20 @@ typedef struct tetris_context_t
     uint16_t map_x;
     uint16_t map_y;
     uint8_t* map;
+
+    uint16_t playfield_origin_x;
+    uint16_t playfield_origin_y;
+    uint16_t info_panel_x;
+    uint16_t font_scale;
     
     uint8_t current_piece;
     uint8_t current_pose;
     uint8_t current_loc_x;
     uint8_t current_loc_y;
+    uint8_t next_piece;
+
+    uint16_t score;
+    uint16_t highscore;
 } tetris_context_t;
 
 static void tetris_set_tile(tetris_context_t* a_tetris_ctx, uint32_t a_index, bool a_active)
@@ -86,12 +96,17 @@ static bool tetris_can_move(tetris_context_t* a_tetris_ctx, uint16_t new_x, uint
 
 static void tetris_start_game(tetris_context_t* a_tetris_ctx)
 {
+    a_tetris_ctx->score = 0;
+
     memory_set(a_tetris_ctx->map, 0, (a_tetris_ctx->map_x * a_tetris_ctx->map_y + 7) / 8);
     tetris_spawn_piece(a_tetris_ctx);
 }
 
 static void tetris_check_full_lines(tetris_context_t* a_tetris_ctx)
 {
+    static const uint16_t line_score[5] = {0, 40, 100, 300, 1200};
+    uint8_t lines_cleared = 0;
+
     for (int y = a_tetris_ctx->map_y - 1; y >= 0; y--)
     {
         bool full_line = true;
@@ -123,6 +138,11 @@ static void tetris_check_full_lines(tetris_context_t* a_tetris_ctx)
             }
             y++;
         }
+    }
+
+    if (lines_cleared > 0)
+    {
+        a_tetris_ctx->score += line_score[lines_cleared];
     }
 }
 
@@ -161,14 +181,28 @@ void tetris_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_conte
     tetris_ctx->ms_per_frame = 250;
 
     tetris_ctx->map_scale = 8;
-    tetris_ctx->map_x = a_ctx->width / tetris_ctx->map_scale;
-    tetris_ctx->map_y = a_ctx->height / tetris_ctx->map_scale;
+    const uint16_t info_panel_width = 48;
+    tetris_ctx->playfield_origin_x = 1;
+    tetris_ctx->playfield_origin_y = 1;
+    uint16_t playfield_width = a_ctx->width - info_panel_width - 2;
+    uint16_t playfield_height = a_ctx->height - 2;
+    tetris_ctx->map_x = playfield_width / tetris_ctx->map_scale;
+    tetris_ctx->map_y = playfield_height / tetris_ctx->map_scale;
     tetris_ctx->map = memory_arena_allocate(a_arena, (tetris_ctx->map_x * tetris_ctx->map_y + 7) / 8);
+
+    tetris_ctx->info_panel_x = tetris_ctx->playfield_origin_x + tetris_ctx->map_x * tetris_ctx->map_scale + 5;
+    tetris_ctx->font_scale = 2;
+    tetris_ctx->score = 0;
+    tetris_ctx->highscore = 0;
+    tetris_ctx->next_piece = rand() % 7;
 
     button_init_context(&tetris_ctx->rotate_button, 15, 10);
     button_init_context(&tetris_ctx->suiside_button, 17, 10);
-    button_init_context(&tetris_ctx->left_button, 19, 10);
-    button_init_context(&tetris_ctx->right_button, 21, 10);
+    button_init_context(&tetris_ctx->left_button, 16, 10);
+    button_init_context(&tetris_ctx->right_button, 20, 10);
+
+    render_fill(a_ctx, COLOR_BLACK);
+    render_flush(a_ctx);
 
     tetris_start_game(tetris_ctx);
 }
@@ -229,6 +263,73 @@ bool tetris_update(app_context_t* a_app, uint32_t a_now_ms)
     return false;
 }
 
+static void render_border(tetris_context_t* a_tetris_ctx, render_context_t* a_ctx)
+{
+    uint16_t x0 = a_tetris_ctx->playfield_origin_x - 1;
+    uint16_t y0 = a_tetris_ctx->playfield_origin_y - 1;
+    uint16_t x1 = a_tetris_ctx->playfield_origin_x + a_tetris_ctx->map_x * a_tetris_ctx->map_scale;
+    uint16_t y1 = a_tetris_ctx->playfield_origin_y + a_tetris_ctx->map_y * a_tetris_ctx->map_scale;
+
+    for (uint16_t x = x0; x <= x1; x++)
+    {
+        render_draw_pixel(a_ctx, x, y0, COLOR_WHITE);
+        render_draw_pixel(a_ctx, x, y1, COLOR_WHITE);
+    }
+    for (uint16_t y = y0; y <= y1; y++)
+    {
+        render_draw_pixel(a_ctx, x0, y, COLOR_WHITE);
+        render_draw_pixel(a_ctx, x1, y, COLOR_WHITE);
+    }
+}
+
+static void render_forecast(tetris_context_t* a_tetris_ctx, render_context_t* a_ctx)
+{
+    uint16_t area_x = a_tetris_ctx->info_panel_x + 4;
+    uint16_t area_y = 4;
+    uint16_t grid_y = area_y + 20;
+
+    render_4x8glyphs(a_ctx, "NEXT", 4, 1, a_tetris_ctx->font_scale, COLOR_WHITE, COLOR_BLACK, area_x, area_y);
+    render_draw_rect(a_ctx, area_x, grid_y, 32, 32, COLOR_BLACK);
+
+    uint16_t piece = pieces[a_tetris_ctx->next_piece][0];
+    for (int i = 0; i < 16; i++)
+    {
+        if ((piece >> (15 - i)) & 1)
+        {
+            uint16_t tile_x = (i % 4);
+            uint16_t tile_y = (i / 4);
+            for (int x = 0; x < a_tetris_ctx->map_scale; x++)
+            {
+                for (int y = 0; y < a_tetris_ctx->map_scale; y++)
+                {
+                    uint16_t pixel_x = area_x + (tile_x * a_tetris_ctx->map_scale) + x;
+                    uint16_t pixel_y = grid_y + (tile_y * a_tetris_ctx->map_scale) + y;
+                    render_draw_pixel(a_ctx, pixel_x, pixel_y, COLOR_WHITE);
+                }
+            }
+        }
+    }
+}
+
+static void render_score(tetris_context_t* a_tetris_ctx, render_context_t* a_ctx)
+{
+    uint16_t x = a_tetris_ctx->info_panel_x;
+    uint16_t y = 64;
+    uint16_t line_height = 18;
+
+    char buf[6];
+    render_4x8glyphs(a_ctx, "SCORE", 5, 1, a_tetris_ctx->font_scale, COLOR_WHITE, COLOR_BLACK, x, y);
+    snprintf(buf, sizeof(buf), "%05d", a_tetris_ctx->score);
+    render_draw_rect(a_ctx, x, y + line_height, 48, 16, COLOR_BLACK);
+    render_4x8glyphs(a_ctx, buf, 5, 1, a_tetris_ctx->font_scale, COLOR_WHITE, COLOR_BLACK, x, y + line_height);
+    
+    y += line_height * 2 + 6;
+    render_4x8glyphs(a_ctx, "HIGH", 4, 1, a_tetris_ctx->font_scale, COLOR_WHITE, COLOR_BLACK, x, y);
+    snprintf(buf, sizeof(buf), "%05d", a_tetris_ctx->highscore);
+    render_draw_rect(a_ctx, x, y + line_height, 48, 16, COLOR_BLACK);
+    render_4x8glyphs(a_ctx, buf, 5, 1, a_tetris_ctx->font_scale, COLOR_WHITE, COLOR_BLACK, x, y + line_height);
+}
+
 void tetris_render(app_context_t* a_app, render_context_t* a_ctx)
 {
     tetris_context_t* tetris_ctx = (tetris_context_t*)a_app->user_data;
@@ -258,13 +359,17 @@ void tetris_render(app_context_t* a_app, render_context_t* a_ctx)
             {
                 for (int y = 0; y < tetris_ctx->map_scale; y++)
                 {
-                    uint16_t pixel_x = (tile_x * tetris_ctx->map_scale) + x;
-                    uint16_t pixel_y = (tile_y * tetris_ctx->map_scale) + y;
-                    render_draw_pixel(a_ctx, pixel_x, pixel_y, 255);
+                    uint16_t pixel_x = tetris_ctx->playfield_origin_x + (tile_x * tetris_ctx->map_scale) + x;
+                    uint16_t pixel_y = tetris_ctx->playfield_origin_y + (tile_y * tetris_ctx->map_scale) + y;
+                    render_draw_pixel(a_ctx, pixel_x, pixel_y, COLOR_WHITE);
                 }
             }
         }
     }
+
+    render_border(tetris_ctx, a_ctx);
+    render_forecast(tetris_ctx, a_ctx);
+    render_score(tetris_ctx, a_ctx);
 
     render_flush(a_ctx);
 }
