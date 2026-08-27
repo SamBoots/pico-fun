@@ -154,14 +154,12 @@ app_update_status_t snake_update(app_context_t* a_app, memory_arena_t* a_arena, 
 void snake_render(app_context_t* a_app, render_context_t* a_ctx)
 {
     snake_context_t* snake_ctx = (snake_context_t*)a_app->user_data;
-    for (int x = 0; x < snake_ctx->map_x * snake_ctx->map_scale; x++)
+    for (int x = 0; x < snake_ctx->map_x * snake_ctx->map_scale; x += snake_ctx->map_scale)
     {
-        for (int y = 0; y < snake_ctx->map_y * snake_ctx->map_scale; y++)
+        for (int y = 0; y < snake_ctx->map_y * snake_ctx->map_scale; y += snake_ctx->map_scale)
         {
-            if (snake_read_tile(snake_ctx, (y / snake_ctx->map_scale) * snake_ctx->map_x + (x / snake_ctx->map_scale)))
-                render_draw_pixel(a_ctx, x, y, 255);
-            else
-                render_draw_pixel(a_ctx, x, y, 0);
+            uint16_t color = snake_read_tile(snake_ctx, (y / snake_ctx->map_scale) * snake_ctx->map_x + (x / snake_ctx->map_scale)) ? 255 : 0;
+            render_draw_rect(a_ctx, x, y, x + snake_ctx->map_scale, y + snake_ctx->map_scale, 0);
         }
     }
     render_flush(a_ctx);

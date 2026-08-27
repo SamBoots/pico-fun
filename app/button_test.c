@@ -72,7 +72,7 @@ static void button_draw_areas(render_context_t* a_ctx, button_test_context_t* a_
                 const char* str;
                 uint16_t str_len;
                 button_status_string(a_app_ctx->button_new_statuses[i], &str, &str_len);
-                render_draw_rect(a_ctx, width, height, a_app_ctx->sector_width, a_app_ctx->sector_height, ping_pong_color_1);
+                render_draw_rect(a_ctx, width, height, width + a_app_ctx->sector_width, height + a_app_ctx->sector_height, ping_pong_color_1);
                 render_8x16glyphs(a_ctx, str, str_len, 4, 2, ping_pong_color_0, ping_pong_color_1, width, height);
             }
         }
@@ -100,7 +100,7 @@ static void button_draw_areas(render_context_t* a_ctx, button_test_context_t* a_
                 const char* str;
                 uint16_t str_len;
                 button_status_string(a_app_ctx->button_new_statuses[i], &str, &str_len);
-                render_draw_rect(a_ctx, width, height, a_app_ctx->sector_width, a_app_ctx->sector_height, ping_pong_color_1);
+                render_draw_rect(a_ctx, width, height, width + a_app_ctx->sector_width, height + a_app_ctx->sector_height, ping_pong_color_1);
                 render_8x16glyphs(a_ctx, str, str_len, 4, 2, ping_pong_color_0, ping_pong_color_1, width, height);
             }
         }

@@ -20,6 +20,8 @@
 #define COLOR_CYAN    0x07FF
 #define COLOR_MAGENTA 0xF81F
 
+typedef const uint8_t* (*glyph_lookup_fn)(char);
+
 typedef struct render_context_t
 {
     uint16_t width;

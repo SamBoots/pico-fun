@@ -113,15 +113,15 @@ int render_4x8glyphs_2x2border(render_context_t* a_ctx, const char* a_str, uint1
     return 1;
 }
 
-int render_draw_rect(render_context_t* a_ctx, uint16_t a_x, uint16_t a_y, uint16_t a_w, uint16_t a_h, uint16_t a_color)
+int render_draw_rect(render_context_t* a_ctx, uint16_t a_x0, uint16_t a_x1, uint16_t a_y0, uint16_t a_y1, uint16_t a_color)
 {
-    a_ctx->draw_rect(a_ctx, a_x, a_y, a_w, a_h, a_color);
+    a_ctx->draw_rect(a_ctx, a_x0, a_x1, a_y0, a_y1, a_color);
     return 1;
 }
 
 int render_fill(render_context_t* a_ctx, uint16_t a_color)
 {
-    a_ctx->draw_rect(a_ctx, 0, 0, a_ctx->width, a_ctx->height, a_color);
+    a_ctx->draw_rect(a_ctx, 0, a_ctx->width, 0, a_ctx->height, a_color);
     return 1;
 }
 
