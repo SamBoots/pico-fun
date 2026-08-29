@@ -20,6 +20,17 @@ static const uint16_t pieces[7][4] =
     {0X0C60, 0X2640, 0X0C60, 0X2640}  // Z
 };
 
+static const uint16_t piece_colors[7] =
+{
+    COLOR_CYAN, // I
+    COLOR_YELLOW, // O
+    COLOR_PURPLE, // T
+    COLOR_BLUE, // J
+    COLOR_ORANGE, // L
+    COLOR_GREEN, // S
+    COLOR_RED  // Z
+};
+
 typedef struct tetris_context_t
 {
     button_context_t left_button;
@@ -34,6 +45,7 @@ typedef struct tetris_context_t
     uint16_t map_x;
     uint16_t map_y;
     uint8_t* map;
+    uint8_t* map_color;
 
     uint16_t playfield_origin_x;
     uint16_t playfield_origin_y;
@@ -64,7 +76,8 @@ static inline bool tetris_read_tile(tetris_context_t* a_tetris_ctx, uint32_t a_i
 
 static void tetris_spawn_piece(tetris_context_t* a_tetris_ctx)
 {
-    a_tetris_ctx->current_piece = rand() % 7;
+    a_tetris_ctx->current_piece = a_tetris_ctx->next_piece;
+    a_tetris_ctx->next_piece = rand() % 7;
     a_tetris_ctx->current_pose = 0;
     a_tetris_ctx->current_loc_x = a_tetris_ctx->map_x / 2 - 2;
     a_tetris_ctx->current_loc_y = 0;
@@ -129,6 +142,7 @@ static void tetris_check_full_lines(tetris_context_t* a_tetris_ctx)
                     uint32_t new_index = old_index + a_tetris_ctx->map_x;
                     bool old_tile = tetris_read_tile(a_tetris_ctx, old_index);
                     tetris_set_tile(a_tetris_ctx, new_index, old_tile);
+                    a_tetris_ctx->map_color[new_index] = a_tetris_ctx->map_color[old_index];
                 }
             }
 
@@ -157,6 +171,7 @@ static void tetris_piece_die(tetris_context_t* a_tetris_ctx)
             uint16_t pixel_y = a_tetris_ctx->current_loc_y + (i / 4);
             uint32_t index = pixel_y * a_tetris_ctx->map_x + pixel_x;
             tetris_set_tile(a_tetris_ctx, index, true);
+            a_tetris_ctx->map_color[index] = a_tetris_ctx->current_piece;
         }
     }
     tetris_check_full_lines(a_tetris_ctx);
@@ -189,6 +204,7 @@ void tetris_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_conte
     tetris_ctx->map_x = playfield_width / tetris_ctx->map_scale;
     tetris_ctx->map_y = playfield_height / tetris_ctx->map_scale;
     tetris_ctx->map = memory_arena_allocate(a_arena, (tetris_ctx->map_x * tetris_ctx->map_y + 7) / 8);
+    tetris_ctx->map_color = memory_arena_allocate(a_arena, tetris_ctx->map_x * tetris_ctx->map_y);
 
     tetris_ctx->info_panel_x = tetris_ctx->playfield_origin_x + tetris_ctx->map_x * tetris_ctx->map_scale + 5;
     tetris_ctx->font_scale = 2;
@@ -292,6 +308,7 @@ static void render_forecast(tetris_context_t* a_tetris_ctx, render_context_t* a_
     render_draw_rect(a_ctx, area_x, grid_y, 32, 32, COLOR_BLACK);
 
     uint16_t piece = pieces[a_tetris_ctx->next_piece][0];
+    uint16_t piece_color = piece_colors[a_tetris_ctx->next_piece];
     for (int i = 0; i < 16; i++)
     {
         if ((piece >> (15 - i)) & 1)
@@ -304,7 +321,7 @@ static void render_forecast(tetris_context_t* a_tetris_ctx, render_context_t* a_
                 {
                     uint16_t pixel_x = area_x + (tile_x * a_tetris_ctx->map_scale) + x;
                     uint16_t pixel_y = grid_y + (tile_y * a_tetris_ctx->map_scale) + y;
-                    render_draw_pixel(a_ctx, pixel_x, pixel_y, COLOR_WHITE);
+                    render_draw_pixel(a_ctx, pixel_x, pixel_y, piece_color);
                 }
             }
         }
@@ -337,18 +354,18 @@ void tetris_render(app_context_t* a_app, render_context_t* a_ctx)
     {
         for (int y = 0; y < tetris_ctx->map_y * tetris_ctx->map_scale; y++)
         {
-            if (tetris_read_tile(tetris_ctx, (y / tetris_ctx->map_scale) * tetris_ctx->map_x + (x / tetris_ctx->map_scale)))
+            uint32_t index = (y / tetris_ctx->map_scale) * tetris_ctx->map_x + (x / tetris_ctx->map_scale);
+            uint16_t color = COLOR_BLACK;
+            if (tetris_read_tile(tetris_ctx, index))
             {
-                render_draw_pixel(a_ctx, x, y, 255);
+                color = piece_colors[tetris_ctx->map_color[index]];
             }
-            else
-            {
-                render_draw_pixel(a_ctx, x, y, 0);
-            }  
+            render_draw_pixel(a_ctx, tetris_ctx->playfield_origin_x + x, tetris_ctx->playfield_origin_y + y, color);
         }
     }
 
     uint16_t piece = pieces[tetris_ctx->current_piece][tetris_ctx->current_pose];
+    uint16_t piece_color = piece_colors[tetris_ctx->current_piece];
     for (int i = 0; i < 16; i++)
     {
         if ((piece >> (15 - i)) & 1)
@@ -361,7 +378,7 @@ void tetris_render(app_context_t* a_app, render_context_t* a_ctx)
                 {
                     uint16_t pixel_x = tetris_ctx->playfield_origin_x + (tile_x * tetris_ctx->map_scale) + x;
                     uint16_t pixel_y = tetris_ctx->playfield_origin_y + (tile_y * tetris_ctx->map_scale) + y;
-                    render_draw_pixel(a_ctx, pixel_x, pixel_y, COLOR_WHITE);
+                    render_draw_pixel(a_ctx, pixel_x, pixel_y, piece_color);
                 }
             }
         }

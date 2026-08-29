@@ -17,6 +17,8 @@
 #define COLOR_YELLOW  0xFFE0
 #define COLOR_CYAN    0x07FF
 #define COLOR_MAGENTA 0xF81F
+#define COLOR_ORANGE  0xFD20
+#define COLOR_PURPLE  0x8010
 
 typedef struct render_context_t
 {
