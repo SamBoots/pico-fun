@@ -134,6 +134,7 @@ static void tetris_check_full_lines(tetris_context_t* a_tetris_ctx)
 
         if (full_line)
         {
+            lines_cleared++;
             for (int move_y = y; move_y > 0; move_y--)
             {
                 for (int x = 0; x < a_tetris_ctx->map_x; x++)
@@ -193,7 +194,7 @@ void tetris_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_conte
     
     tetris_context_t* tetris_ctx = (tetris_context_t*)a_app->user_data;
     tetris_ctx->ms_last_frame = 0;
-    tetris_ctx->ms_per_frame = 250;
+    tetris_ctx->ms_per_frame = 700;
 
     tetris_ctx->map_scale = 8;
     const uint16_t info_panel_width = 48;
@@ -226,45 +227,50 @@ void tetris_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_conte
 bool tetris_update(app_context_t* a_app, uint32_t a_now_ms)
 {
     tetris_context_t* tetris_ctx = (tetris_context_t*)a_app->user_data;
+    button_update(&tetris_ctx->left_button, a_now_ms);
+    button_update(&tetris_ctx->right_button, a_now_ms);
+    button_update(&tetris_ctx->rotate_button, a_now_ms);
+    button_update(&tetris_ctx->suiside_button, a_now_ms);
+
+    bool input_handled = false;
+    if (button_pressed(&tetris_ctx->left_button))
+    {
+        if (tetris_can_move(tetris_ctx, tetris_ctx->current_loc_x - 1, tetris_ctx->current_loc_y, tetris_ctx->current_pose))
+        {
+            tetris_ctx->current_loc_x--;
+        }
+        input_handled = true;
+    }
+    else if (button_pressed(&tetris_ctx->right_button))
+    {
+        if (tetris_can_move(tetris_ctx, tetris_ctx->current_loc_x + 1, tetris_ctx->current_loc_y, tetris_ctx->current_pose))
+        {
+            tetris_ctx->current_loc_x++;
+        }
+        input_handled = true;
+    }
+    else if (button_pressed(&tetris_ctx->rotate_button))
+    {
+        uint8_t new_pose = (tetris_ctx->current_pose + 1) % 4;
+        if (tetris_can_move(tetris_ctx, tetris_ctx->current_loc_x, tetris_ctx->current_loc_y, new_pose))
+        {
+            tetris_ctx->current_pose = new_pose;
+        }
+        input_handled = true;
+    }
+    else if (button_pressed(&tetris_ctx->suiside_button))
+    {
+        while (tetris_can_move(tetris_ctx, tetris_ctx->current_loc_x, tetris_ctx->current_loc_y + 1, tetris_ctx->current_pose))
+        {
+            tetris_ctx->current_loc_y++;
+        }
+        tetris_piece_die(tetris_ctx);
+        input_handled = true;
+    }
+
     if ((uint32_t)(a_now_ms - tetris_ctx->ms_last_frame) > tetris_ctx->ms_per_frame)
     {
         tetris_ctx->ms_last_frame = a_now_ms;
-
-        button_update(&tetris_ctx->left_button, a_now_ms);
-        button_update(&tetris_ctx->right_button, a_now_ms);
-        button_update(&tetris_ctx->rotate_button, a_now_ms);
-        button_update(&tetris_ctx->suiside_button, a_now_ms);
-
-        if (button_pressed(&tetris_ctx->left_button))
-        {
-            if (tetris_can_move(tetris_ctx, tetris_ctx->current_loc_x - 1, tetris_ctx->current_loc_y, tetris_ctx->current_pose))
-            {
-                tetris_ctx->current_loc_x--;
-            }
-        }
-        else if (button_pressed(&tetris_ctx->right_button))
-        {
-            if (tetris_can_move(tetris_ctx, tetris_ctx->current_loc_x + 1, tetris_ctx->current_loc_y, tetris_ctx->current_pose))
-            {
-                tetris_ctx->current_loc_x++;
-            }
-        }
-        else if (button_pressed(&tetris_ctx->rotate_button))
-        {
-            uint8_t new_pose = (tetris_ctx->current_pose + 1) % 4;
-            if (tetris_can_move(tetris_ctx, tetris_ctx->current_loc_x, tetris_ctx->current_loc_y, new_pose))
-            {
-                tetris_ctx->current_pose = new_pose;
-            }
-        }
-        else if (button_pressed(&tetris_ctx->suiside_button))
-        {
-            while (tetris_can_move(tetris_ctx, tetris_ctx->current_loc_x, tetris_ctx->current_loc_y + 1, tetris_ctx->current_pose))
-            {
-                tetris_ctx->current_loc_y++;
-            }
-            tetris_piece_die(tetris_ctx);
-        }
 
         if (tetris_can_move(tetris_ctx, tetris_ctx->current_loc_x, tetris_ctx->current_loc_y + 1, tetris_ctx->current_pose))
         {
@@ -276,7 +282,7 @@ bool tetris_update(app_context_t* a_app, uint32_t a_now_ms)
         }
         return true;
     }
-    return false;
+    return input_handled;
 }
 
 static void render_border(tetris_context_t* a_tetris_ctx, render_context_t* a_ctx)
@@ -350,17 +356,21 @@ static void render_score(tetris_context_t* a_tetris_ctx, render_context_t* a_ctx
 void tetris_render(app_context_t* a_app, render_context_t* a_ctx)
 {
     tetris_context_t* tetris_ctx = (tetris_context_t*)a_app->user_data;
-    for (int x = 0; x < tetris_ctx->map_x * tetris_ctx->map_scale; x++)
+    render_draw_rect(a_ctx, tetris_ctx->playfield_origin_x, tetris_ctx->playfield_origin_y,
+        tetris_ctx->map_x * tetris_ctx->map_scale, tetris_ctx->map_y * tetris_ctx->map_scale, COLOR_BLACK);
+    
+    for (int y = 0; y < tetris_ctx->map_y; y++)
     {
-        for (int y = 0; y < tetris_ctx->map_y * tetris_ctx->map_scale; y++)
+        for (int x = 0; x < tetris_ctx->map_x; x++)
         {
-            uint32_t index = (y / tetris_ctx->map_scale) * tetris_ctx->map_x + (x / tetris_ctx->map_scale);
-            uint16_t color = COLOR_BLACK;
+            uint32_t index = y * tetris_ctx->map_x + x;
             if (tetris_read_tile(tetris_ctx, index))
             {
-                color = piece_colors[tetris_ctx->map_color[index]];
+                uint16_t color = piece_colors[tetris_ctx->map_color[index]];
+                uint16_t pixel_x = tetris_ctx->playfield_origin_x + x * tetris_ctx->map_scale;
+                uint16_t pixel_y = tetris_ctx->playfield_origin_y + y * tetris_ctx->map_scale;
+                render_draw_rect(a_ctx, pixel_x, pixel_y, tetris_ctx->map_scale, tetris_ctx->map_scale, color);
             }
-            render_draw_pixel(a_ctx, tetris_ctx->playfield_origin_x + x, tetris_ctx->playfield_origin_y + y, color);
         }
     }
 
@@ -372,15 +382,9 @@ void tetris_render(app_context_t* a_app, render_context_t* a_ctx)
         {
             uint16_t tile_x = tetris_ctx->current_loc_x + (i % 4);
             uint16_t tile_y = tetris_ctx->current_loc_y + (i / 4);
-            for (int x = 0; x < tetris_ctx->map_scale; x++)
-            {
-                for (int y = 0; y < tetris_ctx->map_scale; y++)
-                {
-                    uint16_t pixel_x = tetris_ctx->playfield_origin_x + (tile_x * tetris_ctx->map_scale) + x;
-                    uint16_t pixel_y = tetris_ctx->playfield_origin_y + (tile_y * tetris_ctx->map_scale) + y;
-                    render_draw_pixel(a_ctx, pixel_x, pixel_y, piece_color);
-                }
-            }
+            uint16_t pixel_x = tetris_ctx->playfield_origin_x + (tile_x * tetris_ctx->map_scale);
+            uint16_t pixel_y = tetris_ctx->playfield_origin_y + (tile_y * tetris_ctx->map_scale);
+            render_draw_rect(a_ctx, pixel_x, pixel_y, tetris_ctx->map_scale, tetris_ctx->map_scale, piece_color);
         }
     }
 
