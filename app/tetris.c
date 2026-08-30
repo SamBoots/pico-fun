@@ -16,7 +16,7 @@ static const uint16_t pieces[7][4] =
     {0X0E40, 0X4C40, 0X4E00, 0X4640}, // T
     {0X4460, 0X0E80, 0XC440, 0X2E00}, // J
     {0X44C0, 0X8E00, 0X6440, 0X0E20}, // L
-    {0X06C0, 0X4C40, 0X4E00, 0X4640}, // S
+    {0X06C0, 0X4620, 0X06C0, 0X4620}, // S
     {0X0C60, 0X2640, 0X0C60, 0X2640}  // Z
 };
 
@@ -54,8 +54,8 @@ typedef struct tetris_context_t
     
     uint8_t current_piece;
     uint8_t current_pose;
-    uint8_t current_loc_x;
-    uint8_t current_loc_y;
+    int16_t current_loc_x;
+    int16_t current_loc_y;
     uint8_t next_piece;
 
     uint16_t score;
@@ -83,7 +83,7 @@ static void tetris_spawn_piece(tetris_context_t* a_tetris_ctx)
     a_tetris_ctx->current_loc_y = 0;
 }
 
-static bool tetris_can_move(tetris_context_t* a_tetris_ctx, uint16_t new_x, uint16_t new_y, uint16_t new_pose)
+static bool tetris_can_move(tetris_context_t* a_tetris_ctx, int16_t new_x, int16_t new_y, uint16_t new_pose)
 {
     uint16_t piece = pieces[a_tetris_ctx->current_piece][new_pose];
     for (int i = 0; i < 16; i++)
