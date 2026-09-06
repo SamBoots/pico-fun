@@ -52,7 +52,7 @@ static void gun_update_screen(gun_context_t* a_gun_ctx, render_context_t* a_ctx)
     render_flush(a_ctx);
 }
 
-static app_update_status_t ammo_counter_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
+static app_update_status_t ammo_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
 {
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
     button_update(&gun_ctx->fire_button, a_now_ms);
@@ -71,26 +71,26 @@ static app_update_status_t ammo_counter_update(app_context_t* a_app, memory_aren
     return APP_OK;
 }
 
-static void ammo_counter_render(app_context_t* a_app, render_context_t* a_ctx)
+static void ammo_render(app_context_t* a_app, render_context_t* a_ctx)
 {
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
     gun_update_screen(gun_ctx, a_ctx);
 }
 
-static void ammo_counter_close(app_context_t* a_app)
+static void ammo_close(app_context_t* a_app)
 {
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
     button_free_context(&gun_ctx->fire_button);
     button_free_context(&gun_ctx->reload_button);
 }
 
-static void ammo_counter_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
+static void ammo_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
 {
     *a_param_buf_size = sizeof(ammo_counter_params_t);
     *a_desc_count = 2;
 }
 
-static void ammo_counter_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
+static void ammo_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
 {
     ammo_counter_params_t* defaults = (ammo_counter_params_t*)a_param_buf;
     defaults->max_ammo = 42;
@@ -100,14 +100,14 @@ static void ammo_counter_default_params(uint8_t* a_param_buf, app_param_descript
     a_descs[1] = APP_PARAM("scale", PARAM_U8, offsetof(ammo_counter_params_t, scale), 1, 16);
 }
 
-static void ammo_counter_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
+static void ammo_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
 {
     const ammo_counter_params_t* params = (const ammo_counter_params_t*)a_app_params;
     a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
     a_app->user_data = memory_arena_allocate(a_arena, sizeof(gun_context_t));
-    a_app->update = ammo_counter_update;
-    a_app->render = ammo_counter_render;
-    a_app->close = ammo_counter_close;
+    a_app->update = ammo_update;
+    a_app->render = ammo_render;
+    a_app->close = ammo_close;
     
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
 
@@ -123,4 +123,4 @@ static void ammo_counter_init_app(app_context_t* a_app, memory_arena_t* a_arena,
     gun_update_screen(gun_ctx, a_ctx);
 }
 
-APP_REGISTER(ammo_counter);
+APP_REGISTER(ammo);

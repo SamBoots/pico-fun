@@ -243,7 +243,7 @@ void app_select_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_c
     button_init_context(&app_select->prev_button, 4, 10);
     button_init_context(&app_select->select_app_button, 9, 10);
 
-    app_select->app_count = (app_entry_end() - app_entry_begin()) / sizeof(app_entry_t);
+    app_select->app_count = app_entry_end() - app_entry_begin();
     move_cursor(app_select, 0);
     app_select_render(a_app, a_ctx);
 }

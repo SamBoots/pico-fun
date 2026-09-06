@@ -35,7 +35,7 @@ pico_sdk_init()
 
 # which apps to initialize
 
-option(APP_AMMO "Add ammo app" ON)
+option(APP_AMMO "Add ammo app" OFF)
 option(APP_SNAKE "Add snake app" ON)
 option(ADD_DEBUG_APPS "add test apps" ON)
 

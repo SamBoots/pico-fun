@@ -216,10 +216,8 @@ static void draw_glyph(render_context_t* a_ctx, uint16_t a_glyph_w, uint16_t a_g
         {
             uint8_t bits = glyph[y / a_scale];
             for (int x = 0; x < glyph_w; x++)
-            {
                 if (bits & (1 << (7 - x / a_scale)))
                     place_pixel(buf, rect_w, lead_spacing + x, y, a_front_color);
-            }
         }
 
         if (i > 0) end_draw(a_ctx);

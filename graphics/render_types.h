@@ -9,7 +9,7 @@
 #define SSD1306_MAX_FRAMEBUFFER 1024
 
 #define BAND_ROWS 16
-#define BAND_BUFFER_SIZE ST7789_MAX_WIDTH * BAND_ROWS
+#define BAND_BUFFER_SIZE (ST7789_MAX_WIDTH * BAND_ROWS * sizeof(uint16_t))
 
 #define COLOR_BLACK   0x0000
 #define COLOR_WHITE   0xFFFF
@@ -55,7 +55,7 @@ typedef struct render_context_t
         } i2c;
     };
 
-    uint8_t buffer[BAND_BUFFER_SIZE][2];
+    uint8_t buffer[2][BAND_BUFFER_SIZE];
     uint8_t buffer_index;
     
     int dma_chan;

@@ -23,7 +23,7 @@ typedef struct snake_context_t
 
     uint32_t ms_last_frame;
     uint32_t ms_per_frame;
-
+    
     uint16_t map_scale;
     uint16_t map_x;
     uint16_t map_y;
@@ -154,14 +154,11 @@ app_update_status_t snake_update(app_context_t* a_app, memory_arena_t* a_arena, 
 void snake_render(app_context_t* a_app, render_context_t* a_ctx)
 {
     snake_context_t* snake_ctx = (snake_context_t*)a_app->user_data;
+    render_draw_rect(a_ctx, 0, snake_ctx->map_x * snake_ctx->map_scale, 0, snake_ctx->map_y * snake_ctx->map_scale, 0);
     for (int x = 0; x < snake_ctx->map_x * snake_ctx->map_scale; x += snake_ctx->map_scale)
-    {
         for (int y = 0; y < snake_ctx->map_y * snake_ctx->map_scale; y += snake_ctx->map_scale)
-        {
-            uint16_t color = snake_read_tile(snake_ctx, (y / snake_ctx->map_scale) * snake_ctx->map_x + (x / snake_ctx->map_scale)) ? 255 : 0;
-            render_draw_rect(a_ctx, x, y, x + snake_ctx->map_scale, y + snake_ctx->map_scale, 0);
-        }
-    }
+            if (snake_read_tile(snake_ctx, (y / snake_ctx->map_scale) * snake_ctx->map_x + (x / snake_ctx->map_scale)))
+                render_draw_rect(a_ctx, x, x + snake_ctx->map_scale, y, y + snake_ctx->map_scale, 255);
     render_flush(a_ctx);
 }
 
