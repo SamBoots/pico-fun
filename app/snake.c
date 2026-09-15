@@ -9,17 +9,26 @@
 
 #define MAX_SNAKE 128 // cheat
 
+static inline int wrap(int a_val, int a_max) 
+{
+    return ((a_val % a_max) + a_max) % a_max;
+}
+
 typedef struct snake_params_t
 {
     uint8_t scale;
 } snake_params_t;
 
+static int16_t dirs[2][4] =
+{
+    { 1, 0, -1, 0 },
+    { 0, 1, 0, -1 }
+};
+
 typedef struct snake_context_t
 {
-    button_context_t north_button;
-    button_context_t south_button;
-    button_context_t west_button;
-    button_context_t east_button;
+    button_context_t left_button;
+    button_context_t right_button;
 
     uint32_t ms_last_frame;
     uint32_t ms_per_frame;
@@ -29,9 +38,9 @@ typedef struct snake_context_t
     uint16_t map_y;
     uint8_t* map;
 
+    uint16_t cur_dir;
+
     uint16_t snake[MAX_SNAKE];
-    int16_t snake_dir_x;
-    int16_t snake_dir_y;
     uint16_t snake_size;
 } snake_context_t;
 
@@ -63,8 +72,8 @@ static void snake_place_apple(snake_context_t* a_snake_ctx)
 
 static bool snake_move(snake_context_t* a_snake_ctx)
 {
-    int16_t x = a_snake_ctx->snake[0] % a_snake_ctx->map_x + a_snake_ctx->snake_dir_x;
-    int16_t y = a_snake_ctx->snake[0] / a_snake_ctx->map_x + a_snake_ctx->snake_dir_y;
+    int16_t x = a_snake_ctx->snake[0] % a_snake_ctx->map_x + dirs[0][a_snake_ctx->cur_dir];
+    int16_t y = a_snake_ctx->snake[0] / a_snake_ctx->map_x + dirs[1][a_snake_ctx->cur_dir];
     if (x >= a_snake_ctx->map_x || x < 0 || y >= a_snake_ctx->map_y || y < 0)
     {
         return false;
@@ -101,8 +110,7 @@ static void snake_start_game(snake_context_t* a_snake_ctx)
 {
     memory_set(a_snake_ctx->map, 0, (a_snake_ctx->map_x * a_snake_ctx->map_y + 7) / 8);
 
-    a_snake_ctx->snake_dir_x = 1;
-    a_snake_ctx->snake_dir_y = 0;
+    a_snake_ctx->cur_dir = 0;
     a_snake_ctx->snake[0] = a_snake_ctx->map_y / 2 * a_snake_ctx->map_x + a_snake_ctx->map_x / 4;
     a_snake_ctx->snake[1] = a_snake_ctx->snake[0] - 1;
     a_snake_ctx->snake_size = 2;
@@ -116,30 +124,16 @@ app_update_status_t snake_update(app_context_t* a_app, memory_arena_t* a_arena, 
     snake_context_t* snake_ctx = (snake_context_t*)a_app->user_data;
     if ((uint32_t)(a_now_ms - snake_ctx->ms_last_frame) > snake_ctx->ms_per_frame)
     {
-        button_update(&snake_ctx->north_button, a_now_ms);
-        button_update(&snake_ctx->south_button, a_now_ms);
-        button_update(&snake_ctx->west_button, a_now_ms);
-        button_update(&snake_ctx->east_button, a_now_ms);
+        button_update(&snake_ctx->left_button, a_now_ms);
+        button_update(&snake_ctx->right_button, a_now_ms);
 
-        if (button_pressed(&snake_ctx->west_button))
+        if (button_pressed(&snake_ctx->left_button))
         {
-            snake_ctx->snake_dir_x = 1;
-            snake_ctx->snake_dir_y = 0;
+            snake_ctx->cur_dir = wrap(snake_ctx->cur_dir + 1, 4);
         }
-        else if (button_pressed(&snake_ctx->east_button))
+        if (button_pressed(&snake_ctx->right_button))
         {
-            snake_ctx->snake_dir_x = -1;
-            snake_ctx->snake_dir_y = 0;
-        }
-        else if (button_pressed(&snake_ctx->south_button))
-        {
-            snake_ctx->snake_dir_x = 0;
-            snake_ctx->snake_dir_y = 1;
-        }
-        else if (button_pressed(&snake_ctx->north_button))
-        {
-            snake_ctx->snake_dir_x = 0;
-            snake_ctx->snake_dir_y = -1;
+            snake_ctx->cur_dir = wrap(snake_ctx->cur_dir - 1, 4);
         }
 
         snake_ctx->ms_last_frame = a_now_ms;
@@ -165,10 +159,6 @@ void snake_render(app_context_t* a_app, render_context_t* a_ctx)
 void snake_close(app_context_t* a_app)
 {
     snake_context_t* snake_ctx = (snake_context_t*)a_app->user_data;
-    button_free_context(&snake_ctx->north_button);
-    button_free_context(&snake_ctx->south_button);
-    button_free_context(&snake_ctx->west_button);
-    button_free_context(&snake_ctx->east_button);
 }
 
 void snake_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
@@ -204,10 +194,8 @@ void snake_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_contex
     snake_ctx->map_y = a_ctx->height / snake_ctx->map_scale;
     snake_ctx->map = memory_arena_allocate(a_arena, (snake_ctx->map_x * snake_ctx->map_y + 7) / 8);
 
-    button_init_context(&snake_ctx->north_button, 2, 10);
-    button_init_context(&snake_ctx->south_button, 3, 10);
-    button_init_context(&snake_ctx->west_button, 9, 10);
-    button_init_context(&snake_ctx->east_button, 13, 10);
+    button_init_context(&snake_ctx->left_button, 2, 10);
+    button_init_context(&snake_ctx->right_button, 3, 10);
 
     snake_start_game(snake_ctx);
 }

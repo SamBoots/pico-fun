@@ -65,8 +65,8 @@ static void nfc_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_c
 
     nfc_test_context_t* nfc_test_ctx = (nfc_test_context_t*)a_app->user_data;
     nfc_init_info_t nfc_init_info;
-    nfc_init_info.pin_sda = 26;
-    nfc_init_info.pin_scl = 27;
+    nfc_init_info.pin_sda = 31;
+    nfc_init_info.pin_scl = 32;
     nfc_init_info.i2c = i2c1;
     nfc_test_ctx->chip_detected = false;
     if (nfc_init(&nfc_test_ctx->nfc_rw, &nfc_init_info, DRIVER_PN532))

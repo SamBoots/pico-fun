@@ -19,17 +19,25 @@ typedef struct nfc_ammo_struct_t
     uint16_t current_ammo;
 } nfc_ammo_struct_t;
 
+typedef enum { GUN_SAFE, GUN_SEMI, GUN_AUTO } gun_status_t;
+
 typedef struct gun_context_t
 {
     button_context_t fire_button;
     button_context_t reload_button;
+    button_context_t full_auto_button;
+    button_context_t semi_auto_button;
+
+    gun_status_t status;
+    gun_status_t old_status;
 
     nfc_context_t nfc;
 
     uint16_t max_ammo;
     uint16_t current_ammo;
     uint16_t fire_rate_ms;
-    uint16_t last_shot_ms;
+    uint32_t last_shot_ms;
+    bool shot_single;
 } gun_context_t;
 
 static bool gun_fire(gun_context_t* a_gun_ctx, uint32_t a_now_ms)
@@ -37,6 +45,7 @@ static bool gun_fire(gun_context_t* a_gun_ctx, uint32_t a_now_ms)
     if (a_gun_ctx->current_ammo && (uint32_t)(a_now_ms - a_gun_ctx->last_shot_ms) > a_gun_ctx->fire_rate_ms)
     {
         a_gun_ctx->current_ammo = a_gun_ctx->current_ammo - 1;
+        a_gun_ctx->last_shot_ms = a_now_ms;
         return true;
     }
     return false;
@@ -61,9 +70,24 @@ static void gun_update_screen(gun_context_t* a_gun_ctx, render_context_t* a_ctx)
         digits[0] = '0' + (a_gun_ctx->current_ammo / 10);
         digits[1] = '0' + (a_gun_ctx->current_ammo % 10);
     }
-    uint16_t scale = 12;
-    render_8x16glyphs(a_ctx, digits, 2, 1, scale, COLOR_RED, COLOR_BLACK, 0, 0);
+    render_draw_rect(a_ctx, 12, 12 + 9 * 8, 5, 5 + 16 * 2, COLOR_BLACK);
+
+    uint16_t scale = 15;
+    render_8x16glyphs(a_ctx, digits, 2, 1, scale, COLOR_RED, COLOR_BLACK, 20, 10);
     render_flush(a_ctx);
+
+    if (a_gun_ctx->status == GUN_AUTO)
+    {
+        render_8x16glyphs(a_ctx, "a", 1, 1, 2, COLOR_RED, COLOR_BLACK, 12, 5);
+    }
+    else if (a_gun_ctx->status == GUN_SEMI)
+    {
+        render_8x16glyphs(a_ctx, "s", 1, 1, 2, COLOR_RED, COLOR_BLACK, 12, 5);
+    }
+    else
+    {
+        render_8x16glyphs(a_ctx, "safe", 4, 2, 1, COLOR_RED, COLOR_BLACK, 12, 10);
+    }
 }
 
 static app_update_status_t ammo_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
@@ -71,7 +95,25 @@ static app_update_status_t ammo_update(app_context_t* a_app, memory_arena_t* a_a
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
     button_update(&gun_ctx->fire_button, a_now_ms);
     button_update(&gun_ctx->reload_button, a_now_ms);
-    if (button_pressed(&gun_ctx->fire_button))
+    button_update(&gun_ctx->full_auto_button, a_now_ms);
+    button_update(&gun_ctx->semi_auto_button, a_now_ms);
+
+    gun_ctx->old_status = gun_ctx->status;
+    if (button_held(&gun_ctx->full_auto_button))
+    {
+        gun_ctx->status = GUN_AUTO;
+    }
+    else if (button_held(&gun_ctx->semi_auto_button))
+    {
+        gun_ctx->status = GUN_SEMI;
+    }
+    else
+    {
+        gun_ctx->status = GUN_SAFE;
+    }
+
+    if ((button_pressed(&gun_ctx->fire_button) && gun_ctx->status == GUN_SEMI || 
+        (!button_held(&gun_ctx->fire_button) && gun_ctx->status == GUN_AUTO)))
     {
         if (gun_fire(gun_ctx, a_now_ms))
             return APP_RENDER;
@@ -82,6 +124,9 @@ static app_update_status_t ammo_update(app_context_t* a_app, memory_arena_t* a_a
         if (gun_reload(gun_ctx))
             return APP_RENDER;
     }
+    if (gun_ctx->status != gun_ctx->old_status)
+        return APP_RENDER;
+    
     return APP_OK;
 }
 
@@ -94,8 +139,6 @@ static void ammo_render(app_context_t* a_app, render_context_t* a_ctx)
 static void ammo_close(app_context_t* a_app)
 {
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
-    button_free_context(&gun_ctx->fire_button);
-    button_free_context(&gun_ctx->reload_button);
 }
 
 static void ammo_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
@@ -126,19 +169,25 @@ static void ammo_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
 
     nfc_init_info_t nfc_init_info;
-    nfc_init_info.pin_sda = 26;
-    nfc_init_info.pin_scl = 27;
+    nfc_init_info.pin_sda = 31;
+    nfc_init_info.pin_scl = 32;
     nfc_init_info.i2c = i2c1;
     if (nfc_init(&gun_ctx->nfc, &nfc_init_info, DRIVER_PN532))
         render_fill(a_ctx, COLOR_BLUE);
+    else
+        render_fill(a_ctx, COLOR_RED);
 
     gun_ctx->max_ammo = params->max_ammo;
     gun_ctx->current_ammo = params->max_ammo;
     gun_ctx->fire_rate_ms = 80;
     gun_ctx->last_shot_ms = 0;
+    gun_ctx->status = GUN_SAFE;
+    gun_ctx->old_status = GUN_SAFE;
 
-    button_init_context(&gun_ctx->fire_button, 3, 10);
-    button_init_context(&gun_ctx->reload_button, 6, 10);
+    button_init_context(&gun_ctx->fire_button, 1, 10);
+    button_init_context(&gun_ctx->reload_button, 2, 10);
+    button_init_context(&gun_ctx->full_auto_button, 13, 10);
+    button_init_context(&gun_ctx->semi_auto_button, 14, 10);
 
     render_fill(a_ctx, COLOR_BLACK);
     gun_update_screen(gun_ctx, a_ctx);

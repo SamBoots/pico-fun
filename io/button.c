@@ -49,3 +49,8 @@ bool button_held(const button_context_t* a_ctx)
 {
     return !a_ctx->current && !a_ctx->previous;
 }
+
+bool button_unheld(const button_context_t* a_ctx)
+{
+    return a_ctx->current && a_ctx->previous;
+}

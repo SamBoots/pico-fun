@@ -10,5 +10,6 @@ int button_update(button_context_t* a_ctx, uint32_t a_now_ms);
 bool button_pressed(const button_context_t* a_ctx);
 bool button_released(const button_context_t* a_ctx);
 bool button_held(const button_context_t* a_ctx);
+bool button_unheld(const button_context_t* a_ctx);
 
 #endif // BUTTON_H

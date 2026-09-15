@@ -22,9 +22,7 @@ const app_entry_t* app_entry_end(void)   { return &__stop_app_entries; }
 typedef struct app_select_context_t
 {
     button_context_t incr_button;
-    button_context_t decr_button;
     button_context_t next_button;
-    button_context_t prev_button;
     button_context_t select_app_button;
 
     cursor_type_t cursor;
@@ -237,11 +235,9 @@ void app_select_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_c
     app_select->cursor = CURSOR_TYPE_APP;
     app_select->cursor_app = 0;
     app_select->cursor_param = 0;
-    button_init_context(&app_select->incr_button, 1, 10);
-    button_init_context(&app_select->decr_button, 2, 10);
-    button_init_context(&app_select->next_button, 3, 10);
-    button_init_context(&app_select->prev_button, 4, 10);
-    button_init_context(&app_select->select_app_button, 9, 10);
+    button_init_context(&app_select->incr_button, 3, 10);
+    button_init_context(&app_select->next_button, 2, 10);
+    button_init_context(&app_select->select_app_button, 1, 10);
 
     app_select->app_count = app_entry_end() - app_entry_begin();
     move_cursor(app_select, 0);
@@ -252,18 +248,16 @@ app_update_status_t app_select_update(app_context_t* a_app, memory_arena_t* a_ar
 {
     app_select_context_t* app_select = (app_select_context_t*)a_app->user_data;
     button_update(&app_select->incr_button, a_now_ms);
-    button_update(&app_select->decr_button, a_now_ms);
     button_update(&app_select->next_button, a_now_ms);
-    button_update(&app_select->prev_button, a_now_ms);
     button_update(&app_select->select_app_button, a_now_ms);
 
-    int incr_cursor = button_pressed(&app_select->incr_button) + -button_pressed(&app_select->decr_button);
+    int incr_cursor = button_pressed(&app_select->incr_button);
     if (incr_cursor != 0)
     {
         move_cursor(app_select, incr_cursor);
         return APP_RENDER;
     }
-    int switch_cursor = button_pressed(&app_select->next_button) + -button_pressed(&app_select->prev_button);
+    int switch_cursor = button_pressed(&app_select->next_button);
     if (switch_cursor != 0)
     {
         app_select->cursor = wrap(app_select->cursor + switch_cursor, CURSOR_TYPE_MAX);
@@ -291,11 +285,6 @@ void app_select_render(app_context_t* a_app, render_context_t* a_ctx)
 void app_select_close(app_context_t* a_app)
 {
     app_select_context_t* app_select = (app_select_context_t*)a_app->user_data;
-    button_free_context(&app_select->incr_button);
-    button_free_context(&app_select->decr_button);
-    button_free_context(&app_select->next_button);
-    button_free_context(&app_select->prev_button);
-    button_free_context(&app_select->select_app_button);
 }
 
 void app_select_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)

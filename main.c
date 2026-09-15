@@ -73,16 +73,19 @@ int main(void)
     gpio_init(PICO_DEFAULT_LED_PIN);
     gpio_set_dir(PICO_DEFAULT_LED_PIN, GPIO_OUT);
 
-    button_context_t exit_app;
-    button_init_context(&exit_app, 13, 10);
+    button_context_t exit_app_0;
+    button_context_t exit_app_1;
+    button_init_context(&exit_app_0, 2, 10);
+    button_init_context(&exit_app_1, 3, 10);
 
     fs_init();
     while (true)
     {
         uint32_t now_ms = to_ms_since_boot(get_absolute_time());
-        button_update(&exit_app, now_ms);
+        button_update(&exit_app_0, now_ms);
+        button_update(&exit_app_1, now_ms);
 
-        if (button_pressed(&exit_app))
+        if (button_held(&exit_app_0) && button_held(&exit_app_1))
         {
             switch_app(&app, app_select_init_app, NULL);
         }
