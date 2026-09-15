@@ -112,7 +112,7 @@ static app_update_status_t ammo_update(app_context_t* a_app, memory_arena_t* a_a
         gun_ctx->status = GUN_SAFE;
     }
 
-    if ((button_pressed(&gun_ctx->fire_button) && gun_ctx->status == GUN_SEMI || 
+    if ((button_released(&gun_ctx->fire_button) && gun_ctx->status == GUN_SEMI || 
         (!button_held(&gun_ctx->fire_button) && gun_ctx->status == GUN_AUTO)))
     {
         if (gun_fire(gun_ctx, a_now_ms))
