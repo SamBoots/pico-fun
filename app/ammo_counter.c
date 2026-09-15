@@ -4,6 +4,7 @@
 #include "../graphics/renderer.h"
 #include "../io/io_types.h"
 #include "../io/button.h"
+#include "../io/nfc.h"
 #include "../memory/memory_arena.h"
 
 typedef struct ammo_counter_params_t
@@ -12,10 +13,18 @@ typedef struct ammo_counter_params_t
     uint8_t scale;
 } ammo_counter_params_t;
 
+typedef struct nfc_ammo_struct_t
+{
+    uint16_t max_ammo;
+    uint16_t current_ammo;
+} nfc_ammo_struct_t;
+
 typedef struct gun_context_t
 {
     button_context_t fire_button;
     button_context_t reload_button;
+
+    nfc_context_t nfc;
 
     uint16_t max_ammo;
     uint16_t current_ammo;
@@ -37,6 +46,11 @@ static inline bool gun_reload(gun_context_t* a_gun_ctx)
 {
     a_gun_ctx->current_ammo = a_gun_ctx->max_ammo;
     return true;
+}
+
+static inline bool magazine_loaded(gun_context_t* a_gun_ctx)
+{
+    
 }
 
 static void gun_update_screen(gun_context_t* a_gun_ctx, render_context_t* a_ctx)
@@ -110,6 +124,13 @@ static void ammo_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_
     a_app->close = ammo_close;
     
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
+
+    nfc_init_info_t nfc_init_info;
+    nfc_init_info.pin_sda = 26;
+    nfc_init_info.pin_scl = 27;
+    nfc_init_info.i2c = i2c1;
+    if (nfc_init(&gun_ctx->nfc, &nfc_init_info, DRIVER_PN532))
+        render_fill(a_ctx, COLOR_BLUE);
 
     gun_ctx->max_ammo = params->max_ammo;
     gun_ctx->current_ammo = params->max_ammo;

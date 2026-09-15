@@ -16,7 +16,7 @@ typedef struct nfc_test_context_t
     bool chip_detected;
 } nfc_test_context_t;
 
-static app_update_status_t nfc_test_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
+static app_update_status_t nfc_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
 {
     nfc_test_context_t* nfc_test_ctx = (nfc_test_context_t*)a_app->user_data;
     if (nfc_test_ctx->chip_detected != nfc_detect_tag(&nfc_test_ctx->nfc_rw))
@@ -27,7 +27,7 @@ static app_update_status_t nfc_test_update(app_context_t* a_app, memory_arena_t*
     return APP_OK;
 }
 
-static void nfc_test_render(app_context_t* a_app, render_context_t* a_ctx)
+static void nfc_render(app_context_t* a_app, render_context_t* a_ctx)
 {
     nfc_test_context_t* nfc_test_ctx = (nfc_test_context_t*)a_app->user_data;
     if (nfc_test_ctx->chip_detected)
@@ -36,18 +36,18 @@ static void nfc_test_render(app_context_t* a_app, render_context_t* a_ctx)
         render_fill(a_ctx, COLOR_BLUE);
 }
 
-static void nfc_test_close(app_context_t* a_app)
+static void nfc_close(app_context_t* a_app)
 {
 
 }
 
-static void nfc_test_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
+static void nfc_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
 {
     *a_param_buf_size = sizeof(nfc_test_params_t);
     *a_desc_count = 1;
 }
 
-static void nfc_test_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
+static void nfc_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
 {
     nfc_test_params_t* defaults = (nfc_test_params_t*)a_param_buf;
     defaults->pad = 0;
@@ -55,13 +55,13 @@ static void nfc_test_default_params(uint8_t* a_param_buf, app_param_descriptor_t
     a_descs[0] = APP_PARAM("pad", PARAM_U8, offsetof(nfc_test_params_t, pad), 0, 1);
 }
 
-static void nfc_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
+static void nfc_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
 {
     a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
     a_app->user_data = memory_arena_allocate(a_arena, sizeof(nfc_test_context_t));
-    a_app->update = nfc_test_update;
-    a_app->render = nfc_test_render;
-    a_app->close = nfc_test_close;
+    a_app->update = nfc_update;
+    a_app->render = nfc_render;
+    a_app->close = nfc_close;
 
     nfc_test_context_t* nfc_test_ctx = (nfc_test_context_t*)a_app->user_data;
     nfc_init_info_t nfc_init_info;
@@ -75,4 +75,4 @@ static void nfc_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, ren
         render_fill(a_ctx, COLOR_RED);
 }
 
-APP_REGISTER(nfc_test);
+APP_REGISTER(nfc);

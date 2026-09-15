@@ -19,7 +19,7 @@ typedef struct pwm_test_context_t
 // simple sine wave tone, 4000 samples at 8000Hz = 0.5 seconds
 static uint8_t s_tone[4000];
 
-static app_update_status_t pwm_test_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
+static app_update_status_t pwm_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
 {
     pwm_test_context_t* app_ctx = (pwm_test_context_t*)a_app->user_data;
     if (!pwm_is_playing(&app_ctx->pwm))
@@ -31,23 +31,23 @@ static app_update_status_t pwm_test_update(app_context_t* a_app, memory_arena_t*
     return APP_OK;
 }
 
-static void pwm_test_render(app_context_t* a_app, render_context_t* a_ctx)
+static void pwm_render(app_context_t* a_app, render_context_t* a_ctx)
 {
     
 }
 
-static void pwm_test_close(app_context_t* a_app)
+static void pwm_close(app_context_t* a_app)
 {
 
 }
 
-static void pwm_test_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
+static void pwm_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
 {
     *a_param_buf_size = sizeof(pwm_test_params_t);
     *a_desc_count = 1;
 }
 
-static void pwm_test_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
+static void pwm_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
 {
     pwm_test_params_t* defaults = (pwm_test_params_t*)a_param_buf;
     defaults->pad = 0;
@@ -55,13 +55,13 @@ static void pwm_test_default_params(uint8_t* a_param_buf, app_param_descriptor_t
     a_descs[0] = APP_PARAM("pad", PARAM_U8, offsetof(pwm_test_params_t, pad), 0, 1);
 }
 
-static void pwm_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
+static void pwm_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
 {
     a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
     a_app->user_data = memory_arena_allocate(a_arena, sizeof(pwm_test_context_t));
-    a_app->update = pwm_test_update;
-    a_app->render = pwm_test_render;
-    a_app->close = pwm_test_close;
+    a_app->update = pwm_update;
+    a_app->render = pwm_render;
+    a_app->close = pwm_close;
     
     pwm_test_context_t* app_ctx = (pwm_test_context_t*)a_app->user_data;
     pwm_init_context(&app_ctx->pwm, 13);
@@ -71,4 +71,4 @@ static void pwm_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, ren
     pwm_audio_play(&app_ctx->pwm, s_tone, sizeof(s_tone));
 }
 
-APP_REGISTER(pwm_test);
+APP_REGISTER(pwm);

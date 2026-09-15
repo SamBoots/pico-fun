@@ -93,4 +93,3 @@ target_link_libraries(S_OS
         )
 
 pico_add_extra_outputs(S_OS)
-

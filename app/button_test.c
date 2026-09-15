@@ -72,7 +72,7 @@ static void button_draw_areas(render_context_t* a_ctx, button_test_context_t* a_
                 const char* str;
                 uint16_t str_len;
                 button_status_string(a_app_ctx->button_new_statuses[i], &str, &str_len);
-                render_draw_rect(a_ctx, width, height, width + a_app_ctx->sector_width, height + a_app_ctx->sector_height, ping_pong_color_1);
+                render_draw_rect(a_ctx, width, width + a_app_ctx->sector_width, height, height + a_app_ctx->sector_height, ping_pong_color_1);
                 render_8x16glyphs(a_ctx, str, str_len, 4, 2, ping_pong_color_0, ping_pong_color_1, width, height);
             }
         }
@@ -100,14 +100,14 @@ static void button_draw_areas(render_context_t* a_ctx, button_test_context_t* a_
                 const char* str;
                 uint16_t str_len;
                 button_status_string(a_app_ctx->button_new_statuses[i], &str, &str_len);
-                render_draw_rect(a_ctx, width, height, width + a_app_ctx->sector_width, height + a_app_ctx->sector_height, ping_pong_color_1);
+                render_draw_rect(a_ctx, width,  width + a_app_ctx->sector_width, height, height + a_app_ctx->sector_height, ping_pong_color_1);
                 render_8x16glyphs(a_ctx, str, str_len, 4, 2, ping_pong_color_0, ping_pong_color_1, width, height);
             }
         }
     }
 }
 
-static app_update_status_t button_test_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
+static app_update_status_t input_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
 {
     button_test_context_t* app_ctx = (button_test_context_t*)a_app->user_data;
     
@@ -137,26 +137,26 @@ static app_update_status_t button_test_update(app_context_t* a_app, memory_arena
     return status;
 }
 
-static void button_test_render(app_context_t* a_app, render_context_t* a_ctx)
+static void input_render(app_context_t* a_app, render_context_t* a_ctx)
 {
     button_test_context_t* app_ctx = (button_test_context_t*)a_app->user_data;
     button_draw_areas(a_ctx, app_ctx, app_ctx->button_count);
 }
 
-static void button_test_close(app_context_t* a_app)
+static void input_close(app_context_t* a_app)
 {
     button_test_context_t* app_ctx = (button_test_context_t*)a_app->user_data;
     for (size_t i = 0; i < app_ctx->button_count; i++)
         button_free_context(&app_ctx->buttons[i]);
 }
 
-static void button_test_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
+static void input_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
 {
     *a_param_buf_size = sizeof(button_test_params_t);
     *a_desc_count = 8;
 }
 
-static void button_test_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
+static void input_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
 {
     button_test_params_t* defaults = (button_test_params_t*)a_param_buf;
     defaults->button_count = 1;
@@ -173,13 +173,13 @@ static void button_test_default_params(uint8_t* a_param_buf, app_param_descripto
     a_descs[8] = APP_PARAM("pin7", PARAM_U8, offsetof(button_test_params_t, button_pin[7]), 1, 26);
 }
 
-static void button_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
+static void input_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
 {
     a_app->memory_arena_marker = memory_arena_get_marker(a_arena);
     a_app->user_data = memory_arena_allocate(a_arena, sizeof(button_test_context_t));
-    a_app->update = button_test_update;
-    a_app->render = button_test_render;
-    a_app->close = button_test_close;
+    a_app->update = input_update;
+    a_app->render = input_render;
+    a_app->close = input_close;
     
     const button_test_params_t* params = (const button_test_params_t*)a_app_params;
     button_test_context_t* app_ctx = (button_test_context_t*)a_app->user_data;
@@ -209,4 +209,4 @@ static void button_test_init_app(app_context_t* a_app, memory_arena_t* a_arena, 
     button_draw_areas(a_ctx, app_ctx, BUTTON_MAX);
 }
 
-APP_REGISTER(button_test);
+APP_REGISTER(input);
