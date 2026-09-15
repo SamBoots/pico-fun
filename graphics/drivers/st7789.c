@@ -37,7 +37,7 @@ static void st7789_send_data(const render_context_t* a_ctx, const uint8_t* a_dat
     cs_high(a_ctx);
 }
 
-static void st7789_caset(const render_context_t* a_ctx, uint16_t a_xs, uint16_t a_xe)
+static void st7789_raset(const render_context_t* a_ctx, uint16_t a_xs, uint16_t a_xe)
 {
     const uint8_t data[] = {
         (a_xs + a_ctx->x_offset) >> 8,
@@ -49,7 +49,7 @@ static void st7789_caset(const render_context_t* a_ctx, uint16_t a_xs, uint16_t 
     st7789_send_data(a_ctx, data, sizeof(data));
 }
 
-static void st7789_raset(const render_context_t* a_ctx, uint16_t a_ys, uint16_t a_ye)
+static void st7789_caset(const render_context_t* a_ctx, uint16_t a_ys, uint16_t a_ye)
 {
     const uint8_t data[] = {
         (a_ys + a_ctx->y_offset) >> 8,

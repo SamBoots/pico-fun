@@ -1,5 +1,5 @@
-#define TEST_W 240
-#define TEST_H 280
+#define TEST_H 240
+#define TEST_W 280
  
 #include "pico/stdlib.h"
 #include "graphics/render_types.h"
