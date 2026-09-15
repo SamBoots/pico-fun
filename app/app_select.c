@@ -86,7 +86,7 @@ static inline void display_app_info(app_select_context_t* a_app_select, render_c
     uint16_t select_color = COLOR_GREEN;
     if (a_app_select->cursor == CURSOR_TYPE_APP)
         select_color = COLOR_RED;
-    render_8x16glyphs(a_ctx, cursor->name, cursor->name_len, 4, 3, select_color, COLOR_BLACK, 16, a_ctx->height / 6 * 1);
+    render_8x16glyphs(a_ctx, cursor->name, cursor->name_len, 4, 3, select_color, COLOR_BLACK, 16, 0);
 }
 
 static inline void display_param_info(app_select_context_t* a_app_select, render_context_t* a_ctx)
@@ -99,7 +99,7 @@ static inline void display_param_info(app_select_context_t* a_app_select, render
     else if (a_app_select->cursor == CURSOR_TYPE_PARAM_VAL)
         param_val_color = COLOR_RED;
 
-    render_8x16glyphs(a_ctx, param->label, param->label_len, 4, 3, param_color, COLOR_BLACK, 16, a_ctx->height / 6 * 2);
+    render_8x16glyphs(a_ctx, param->label, param->label_len, 4, 3, param_color, COLOR_BLACK, 16, a_ctx->height / 6 * 1);
     switch (param->type)
     {
     case PARAM_U16:
@@ -114,7 +114,7 @@ static inline void display_param_info(app_select_context_t* a_app_select, render
             str[3] = '0' + (val / 10);
             str[4] = '0' + (val % 10);
         }
-        render_8x16glyphs(a_ctx, str, 5, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 6 * 3);
+        render_8x16glyphs(a_ctx, str, 5, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 6 * 2);
         break;
     }
     case PARAM_U8:
@@ -127,15 +127,15 @@ static inline void display_param_info(app_select_context_t* a_app_select, render
             str[1] = '0' + (val / 10);
             str[2] = '0' + (val % 10);
         }
-        render_8x16glyphs(a_ctx, str, 3, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 6 * 3);
+        render_8x16glyphs(a_ctx, str, 3, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 6 * 2);
         break;
     }
     case PARAM_BOOL:
     {
         if (get_bool_param(param, (void*)a_app_select->param_buf))
-            render_8x16glyphs(a_ctx, "true", 4, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 6 * 3);
+            render_8x16glyphs(a_ctx, "true", 4, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 6 * 2);
         else
-            render_8x16glyphs(a_ctx, "false", 5, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 6 * 3);
+            render_8x16glyphs(a_ctx, "false", 5, 4, 3, param_val_color, COLOR_BLACK, 16, a_ctx->height / 6 * 2);
         break;
     }
     }
@@ -150,8 +150,8 @@ static inline void display_param_save_info(app_select_context_t* a_app_select, r
     else if (a_app_select->cursor == CURSOR_TYPE_RELOAD_DEFAULT)
         reload_color = COLOR_RED;
 
-    render_8x16glyphs(a_ctx, "save", 4, 4, 3, save_color, COLOR_BLACK, 16, a_ctx->height / 6 * 4);
-    render_8x16glyphs(a_ctx, "reload", 6, 4, 3, reload_color, COLOR_BLACK, 16, a_ctx->height / 6 * 5);
+    render_8x16glyphs(a_ctx, "save", 4, 4, 3, save_color, COLOR_BLACK, 16, a_ctx->height / 6 * 3);
+    render_8x16glyphs(a_ctx, "reload", 6, 4, 3, reload_color, COLOR_BLACK, 16, a_ctx->height / 6 * 4);
 }
 
 static inline void modify_param(void* a_data, param_type_t a_type, int a_incr, int a_min, int a_max)

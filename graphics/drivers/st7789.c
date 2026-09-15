@@ -6,6 +6,10 @@
 #include "../font4x8.h"
 #include "string.h"
 
+
+#define W_H_ORIENTATION 0
+#define H_W_ORIENTATION 0xA0 
+
 // STANDARDIZE THESE HELPERS
 
 static uint8_t* get_buffer_and_swap(render_context_t* a_ctx)
@@ -37,7 +41,7 @@ static void st7789_send_data(const render_context_t* a_ctx, const uint8_t* a_dat
     cs_high(a_ctx);
 }
 
-static void st7789_raset(const render_context_t* a_ctx, uint16_t a_xs, uint16_t a_xe)
+static void st7789_caset(const render_context_t* a_ctx, uint16_t a_xs, uint16_t a_xe)
 {
     const uint8_t data[] = {
         (a_xs + a_ctx->x_offset) >> 8,
@@ -49,7 +53,7 @@ static void st7789_raset(const render_context_t* a_ctx, uint16_t a_xs, uint16_t 
     st7789_send_data(a_ctx, data, sizeof(data));
 }
 
-static void st7789_caset(const render_context_t* a_ctx, uint16_t a_ys, uint16_t a_ye)
+static void st7789_raset(const render_context_t* a_ctx, uint16_t a_ys, uint16_t a_ye)
 {
     const uint8_t data[] = {
         (a_ys + a_ctx->y_offset) >> 8,
@@ -102,7 +106,7 @@ void st7789_init(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a
     sleep_ms(10);
 
     st7789_send_cmd(a_ctx, 0x36);                     // MADCTL
-    st7789_send_data(a_ctx, (uint8_t[]){ 0x00 }, 1);  // normal orientation
+    st7789_send_data(a_ctx, (uint8_t[]){ H_W_ORIENTATION }, 1);  // MV=1, MX=1: rotate 90° one way
     sleep_ms(10);
 
     st7789_send_cmd(a_ctx, 0x21); sleep_ms(150);  // INVON
