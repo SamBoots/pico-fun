@@ -7,6 +7,8 @@
 #include "../io/nfc.h"
 #include "../memory/memory_arena.h"
 
+#define AMMO_GUID 0xDEADBEEF
+
 typedef struct ammo_counter_params_t
 {
     uint8_t max_ammo;
@@ -15,6 +17,7 @@ typedef struct ammo_counter_params_t
 
 typedef struct nfc_ammo_struct_t
 {
+    uint32_t ammo_guid;
     uint16_t max_ammo;
     uint16_t current_ammo;
 } nfc_ammo_struct_t;
@@ -33,11 +36,12 @@ typedef struct gun_context_t
 
     nfc_context_t nfc;
 
+
+    bool magazine_loaded;
     uint16_t max_ammo;
     uint16_t current_ammo;
     uint16_t fire_rate_ms;
     uint32_t last_shot_ms;
-    bool shot_single;
 } gun_context_t;
 
 static bool gun_fire(gun_context_t* a_gun_ctx, uint32_t a_now_ms)
@@ -53,13 +57,42 @@ static bool gun_fire(gun_context_t* a_gun_ctx, uint32_t a_now_ms)
 
 static inline bool gun_reload(gun_context_t* a_gun_ctx)
 {
-    a_gun_ctx->current_ammo = a_gun_ctx->max_ammo;
-    return true;
-}
+    if (a_gun_ctx->magazine_loaded)
+    {
+        // release mag and write current ammo to it.
+        nfc_ammo_struct_t ammo;
+        ammo.ammo_guid = AMMO_GUID;
+        ammo.max_ammo = a_gun_ctx->max_ammo;
+        if (a_gun_ctx->current_ammo == 0)
+            ammo.current_ammo = 0;
+        else
+        {
+            ammo.current_ammo = a_gun_ctx->current_ammo - 1;
+            a_gun_ctx->current_ammo = 1; // one round stays chambered in the gun
+        }
 
-static inline bool magazine_loaded(gun_context_t* a_gun_ctx)
-{
-    
+        a_gun_ctx->magazine_loaded = false;
+        nfc_write(&a_gun_ctx->nfc, 0, &ammo, sizeof(nfc_ammo_struct_t));
+    }
+    else
+    {
+        nfc_ammo_struct_t ammo;
+        if (!nfc_read(&a_gun_ctx->nfc, 0, &ammo, sizeof(nfc_ammo_struct_t)))
+            return false;
+
+        if (ammo.ammo_guid != AMMO_GUID)
+        {
+            // NFC not registered as ammo yet, write a full mag towards it
+            ammo.ammo_guid = AMMO_GUID;
+            ammo.max_ammo = a_gun_ctx->max_ammo;
+            ammo.current_ammo = a_gun_ctx->max_ammo;
+
+            nfc_write(&a_gun_ctx->nfc, 0, &ammo, sizeof(nfc_ammo_struct_t));
+        }
+        a_gun_ctx->current_ammo = ammo.current_ammo + a_gun_ctx->current_ammo;
+        a_gun_ctx->magazine_loaded = true;
+    }
+    return true;
 }
 
 static void gun_update_screen(gun_context_t* a_gun_ctx, render_context_t* a_ctx)
