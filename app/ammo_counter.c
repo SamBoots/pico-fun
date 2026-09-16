@@ -206,21 +206,25 @@ static void ammo_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_
     nfc_init_info.pin_scl = 32;
     nfc_init_info.i2c = i2c1;
     if (nfc_init(&gun_ctx->nfc, &nfc_init_info, DRIVER_PN532))
-        render_fill(a_ctx, COLOR_BLUE);
-    else
+    {
         render_fill(a_ctx, COLOR_RED);
+        return;
+    }
 
     gun_ctx->max_ammo = params->max_ammo;
-    gun_ctx->current_ammo = params->max_ammo;
+    gun_ctx->current_ammo = 0;
     gun_ctx->fire_rate_ms = 80;
     gun_ctx->last_shot_ms = 0;
     gun_ctx->status = GUN_SAFE;
     gun_ctx->old_status = GUN_SAFE;
+    gun_ctx->magazine_loaded = false;
 
     button_init_context(&gun_ctx->fire_button, 1, 10);
     button_init_context(&gun_ctx->reload_button, 2, 10);
     button_init_context(&gun_ctx->full_auto_button, 13, 10);
     button_init_context(&gun_ctx->semi_auto_button, 14, 10);
+
+    gun_reload(gun_ctx);
 
     render_fill(a_ctx, COLOR_BLACK);
     gun_update_screen(gun_ctx, a_ctx);
