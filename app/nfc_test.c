@@ -29,9 +29,9 @@ static app_update_status_t nfc_update(app_context_t* a_app, memory_arena_t* a_ar
 {
     nfc_test_context_t* nfc_test_ctx = (nfc_test_context_t*)a_app->user_data;
 
-    button_update(&nfc_test_ctx->button_next_page, 100);
+    button_update(&nfc_test_ctx->button_next_page, a_now_ms);
 
-    if (nfc_test_ctx->current_page == -4 && button_pressed(&nfc_test_ctx->button_next_page))
+    if (button_pressed(&nfc_test_ctx->button_next_page))
     {
         if (nfc_read(&nfc_test_ctx->nfc_rw, nfc_test_ctx->current_page + 4, nfc_test_ctx->nfc_data, sizeof(nfc_test_ctx->nfc_data)))
             nfc_test_ctx->current_page += 4;
@@ -39,20 +39,8 @@ static app_update_status_t nfc_update(app_context_t* a_app, memory_arena_t* a_ar
             nfc_test_ctx->current_page = -4;
         return APP_RENDER;
     }
-    return APP_OK;
-}
 
-const char* page_label(uint8_t page) {
-    if (page <= 1) return "UID/BCC";
-    if (page == 2) return "Static lock";
-    if (page == 3) return "CC";
-    if (page <= 129) return "User data";
-    if (page == 130) return "Dynamic lock";
-    if (page == 131) return "CFG0";
-    if (page == 132) return "CFG1";
-    if (page == 133) return "PWD";
-    if (page == 134) return "PACK";
-    return "?";
+    return APP_OK;
 }
 
 static void nfc_render(app_context_t* a_app, render_context_t* a_ctx)
@@ -65,22 +53,13 @@ static void nfc_render(app_context_t* a_app, render_context_t* a_ctx)
             uint8_t page = nfc_test_ctx->current_page + i;
             const uint8_t *p = &nfc_test_ctx->nfc_data[i * 4];
 
-            char ascii[5];
-            for (int j = 0; j < 4; j++) {
-                char c = p[j];
-                if (c >= 'A' && c <= 'Z') {
-                    c = c - 'A' + 'a';   // fold uppercase down to lowercase for display
-                }
-                ascii[j] = (c >= 0x20 && c < 0x7F) ? c : '.';
-            }
-            ascii[4] = '\0';
-            char byte_text[40];
-            snprintf(byte_text, strlen(byte_text),
-                    "Page %3d [%-11s]: %02x %02x %02x %02x  | %s",
-                    page, page_label(page), p[0], p[1], p[2], p[3], ascii);
+            char byte_text[24];
+            snprintf(byte_text, sizeof(byte_text),
+                    "%3dx%02x%02x%02x%02x",
+                    page, p[0], p[1], p[2], p[3]);
             
-            render_8x16glyphs(a_ctx, byte_text, sizeof(byte_text), 
-            2, 2, COLOR_GREEN, COLOR_BLUE, 20, a_ctx->height / nfc_test_ctx->page_increment * i);
+            render_8x16glyphs(a_ctx, byte_text, strlen(byte_text), 
+            2, 2, COLOR_GREEN, COLOR_BLUE, 0, a_ctx->height / nfc_test_ctx->page_increment * i);
         }
     }
     else
@@ -126,6 +105,7 @@ static void nfc_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_c
         render_fill(a_ctx, COLOR_BLUE);
     else
         render_fill(a_ctx, COLOR_RED);
+        
 
     button_init_context(&nfc_test_ctx->button_next_page, 2, 10);
 }

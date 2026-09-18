@@ -24,6 +24,7 @@ typedef struct app_select_context_t
     button_context_t incr_button;
     button_context_t next_button;
     button_context_t select_app_button;
+    button_context_t select_app_button_extra;
 
     cursor_type_t cursor;
     int16_t cursor_app;
@@ -238,6 +239,7 @@ void app_select_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_c
     button_init_context(&app_select->incr_button, 3, 10);
     button_init_context(&app_select->next_button, 2, 10);
     button_init_context(&app_select->select_app_button, 1, 10);
+    button_init_context(&app_select->select_app_button_extra, 14, 10);
 
     app_select->app_count = app_entry_end() - app_entry_begin();
     move_cursor(app_select, 0);
@@ -250,6 +252,7 @@ app_update_status_t app_select_update(app_context_t* a_app, memory_arena_t* a_ar
     button_update(&app_select->incr_button, a_now_ms);
     button_update(&app_select->next_button, a_now_ms);
     button_update(&app_select->select_app_button, a_now_ms);
+    button_update(&app_select->select_app_button_extra, a_now_ms);
 
     int incr_cursor = button_pressed(&app_select->incr_button);
     if (incr_cursor != 0)
@@ -264,7 +267,7 @@ app_update_status_t app_select_update(app_context_t* a_app, memory_arena_t* a_ar
         return APP_RENDER;
     }
 
-    if (button_pressed(&app_select->select_app_button))
+    if (button_pressed(&app_select->select_app_button) || button_pressed(&app_select->select_app_button_extra))
     {
         change_app(app_select, a_app, a_arena, a_ctx);
         return APP_EXIT_NO_CLOSE;

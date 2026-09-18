@@ -74,10 +74,8 @@ static bool snake_move(snake_context_t* a_snake_ctx)
 {
     int16_t x = a_snake_ctx->snake[0] % a_snake_ctx->map_x + dirs[0][a_snake_ctx->cur_dir];
     int16_t y = a_snake_ctx->snake[0] / a_snake_ctx->map_x + dirs[1][a_snake_ctx->cur_dir];
-    if (x >= a_snake_ctx->map_x || x < 0 || y >= a_snake_ctx->map_y || y < 0)
-    {
+    if (x > a_snake_ctx->map_x || x < 0 || y > a_snake_ctx->map_y || y < 0)
         return false;
-    }
 
     uint16_t new_head = y * a_snake_ctx->map_x + x;
     uint16_t old_tail = a_snake_ctx->snake[a_snake_ctx->snake_size - 1];
@@ -87,10 +85,8 @@ static bool snake_move(snake_context_t* a_snake_ctx)
         a_snake_ctx->snake[i] = a_snake_ctx->snake[i - 1];
 
     for (int i = 0; i < a_snake_ctx->snake_size - 1; i++)
-    {
         if (a_snake_ctx->snake[i] == new_head)
             return false;
-    }
     
     if (snake_read_tile(a_snake_ctx, new_head))
     {
@@ -170,9 +166,9 @@ void snake_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
 void snake_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
 {
     snake_params_t* defaults = (snake_params_t*)a_param_buf;
-    defaults->scale = 2;
+    defaults->scale = 16;
 
-    a_descs[0] = APP_PARAM("scale", PARAM_U8, offsetof(snake_params_t, scale), 1, 16);
+    a_descs[0] = APP_PARAM("scale", PARAM_U8, offsetof(snake_params_t, scale), 8, 32);
 }
 
 void snake_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)

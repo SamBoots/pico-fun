@@ -222,7 +222,7 @@ bool pn532_read(const nfc_context_t* a_ctx, uint8_t a_offset, void* a_data, uint
 
     uint8_t* dst = (uint8_t*)a_data;
     uint8_t pages = a_len / a_ctx->page_size;
-    uint8_t current_pg = a_offset / a_ctx->page_size;
+    uint8_t current_pg = a_offset;
 
     for (uint8_t i = 0; i < pages; i++) {
         uint8_t cmd[] = {
@@ -251,7 +251,7 @@ bool pn532_write(const nfc_context_t* a_ctx, uint8_t a_offset, const void* a_dat
 
     const uint8_t* src = (const uint8_t*)a_data;
     uint8_t pages = a_len / a_ctx->page_size;
-    uint8_t current_pg = a_offset / a_ctx->page_size;
+    uint8_t current_pg = a_offset;
 
     for (uint8_t i = 0; i < pages; i++) {
         uint8_t cmd[8];

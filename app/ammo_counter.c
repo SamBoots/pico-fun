@@ -12,14 +12,14 @@
 typedef struct ammo_counter_params_t
 {
     uint8_t max_ammo;
-    uint8_t scale;
+    uint8_t fire_rate;
 } ammo_counter_params_t;
 
 typedef struct nfc_ammo_struct_t
 {
     uint32_t ammo_guid;
-    uint16_t max_ammo;
-    uint16_t current_ammo;
+    uint8_t max_ammo;
+    uint8_t current_ammo;
 } nfc_ammo_struct_t;
 
 typedef enum { GUN_SAFE, GUN_SEMI, GUN_AUTO } gun_status_t;
@@ -28,6 +28,7 @@ typedef struct gun_context_t
 {
     button_context_t fire_button;
     button_context_t reload_button;
+    button_context_t emergency_reload_button;
     button_context_t full_auto_button;
     button_context_t semi_auto_button;
 
@@ -52,6 +53,17 @@ static bool gun_fire(gun_context_t* a_gun_ctx, uint32_t a_now_ms)
         return true;
     }
     return false;
+}
+
+static inline bool gun_reset_mag(gun_context_t* a_gun_ctx)
+{
+    nfc_ammo_struct_t ammo;
+    // NFC not registered as ammo yet, write a full mag towards it
+    ammo.ammo_guid = AMMO_GUID;
+    ammo.max_ammo = a_gun_ctx->max_ammo;
+    ammo.current_ammo = a_gun_ctx->max_ammo;
+
+    nfc_write(&a_gun_ctx->nfc, NTAG_215_START_PAGE, &ammo, sizeof(nfc_ammo_struct_t));
 }
 
 static inline bool gun_reload(gun_context_t* a_gun_ctx)
@@ -81,12 +93,7 @@ static inline bool gun_reload(gun_context_t* a_gun_ctx)
 
         if (ammo.ammo_guid != AMMO_GUID)
         {
-            // NFC not registered as ammo yet, write a full mag towards it
-            ammo.ammo_guid = AMMO_GUID;
-            ammo.max_ammo = a_gun_ctx->max_ammo;
-            ammo.current_ammo = a_gun_ctx->max_ammo;
-
-            nfc_write(&a_gun_ctx->nfc, NTAG_215_START_PAGE, &ammo, sizeof(nfc_ammo_struct_t));
+            gun_reset_mag(a_gun_ctx);
         }
         a_gun_ctx->current_ammo = ammo.current_ammo + a_gun_ctx->current_ammo;
         a_gun_ctx->magazine_loaded = true;
@@ -127,34 +134,31 @@ static app_update_status_t ammo_update(app_context_t* a_app, memory_arena_t* a_a
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
     button_update(&gun_ctx->fire_button, a_now_ms);
     button_update(&gun_ctx->reload_button, a_now_ms);
+    button_update(&gun_ctx->emergency_reload_button, a_now_ms);
     button_update(&gun_ctx->full_auto_button, a_now_ms);
     button_update(&gun_ctx->semi_auto_button, a_now_ms);
 
     gun_ctx->old_status = gun_ctx->status;
     if (button_held(&gun_ctx->full_auto_button))
-    {
         gun_ctx->status = GUN_AUTO;
-    }
     else if (button_held(&gun_ctx->semi_auto_button))
-    {
         gun_ctx->status = GUN_SEMI;
-    }
     else
-    {
         gun_ctx->status = GUN_SAFE;
-    }
 
     if ((button_released(&gun_ctx->fire_button) && gun_ctx->status == GUN_SEMI || 
         (!button_held(&gun_ctx->fire_button) && gun_ctx->status == GUN_AUTO)))
-    {
         if (gun_fire(gun_ctx, a_now_ms))
             return APP_RENDER;
-    }
 
     if (button_pressed(&gun_ctx->reload_button))
-    {
         if (gun_reload(gun_ctx))
             return APP_RENDER;
+
+    if (button_pressed(&gun_ctx->emergency_reload_button))
+    {
+        gun_reset_mag(gun_ctx);
+        return APP_RENDER;
     }
     if (gun_ctx->status != gun_ctx->old_status)
         return APP_RENDER;
@@ -184,10 +188,10 @@ static void ammo_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_
 {
     ammo_counter_params_t* defaults = (ammo_counter_params_t*)a_param_buf;
     defaults->max_ammo = 42;
-    defaults->scale = 2;
+    defaults->fire_rate = 90;
 
     a_descs[0] = APP_PARAM("maxammo", PARAM_U8, offsetof(ammo_counter_params_t, max_ammo), 1, 99);
-    a_descs[1] = APP_PARAM("scale", PARAM_U8, offsetof(ammo_counter_params_t, scale), 1, 16);
+    a_descs[1] = APP_PARAM("firerate", PARAM_U8, offsetof(ammo_counter_params_t, fire_rate), 60, 180);
 }
 
 static void ammo_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params)
@@ -213,7 +217,7 @@ static void ammo_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_
 
     gun_ctx->max_ammo = params->max_ammo;
     gun_ctx->current_ammo = 0;
-    gun_ctx->fire_rate_ms = 80;
+    gun_ctx->fire_rate_ms = params->fire_rate;
     gun_ctx->last_shot_ms = 0;
     gun_ctx->status = GUN_SAFE;
     gun_ctx->old_status = GUN_SAFE;
@@ -221,6 +225,7 @@ static void ammo_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_
 
     button_init_context(&gun_ctx->fire_button, 1, 10);
     button_init_context(&gun_ctx->reload_button, 2, 10);
+    button_init_context(&gun_ctx->emergency_reload_button, 3, 10);
     button_init_context(&gun_ctx->full_auto_button, 13, 10);
     button_init_context(&gun_ctx->semi_auto_button, 14, 10);
 
