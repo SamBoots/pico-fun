@@ -3,6 +3,9 @@
 
 #include "hardware/i2c.h"
 
+#define NTAG_215_START_PAGE 4
+#define NTAG_215_END_PAGE 129
+
 typedef enum nfc_driver_t
 {
     DRIVER_PN532

@@ -36,7 +36,6 @@ typedef struct gun_context_t
 
     nfc_context_t nfc;
 
-
     bool magazine_loaded;
     uint16_t max_ammo;
     uint16_t current_ammo;
@@ -72,12 +71,12 @@ static inline bool gun_reload(gun_context_t* a_gun_ctx)
         }
 
         a_gun_ctx->magazine_loaded = false;
-        nfc_write(&a_gun_ctx->nfc, 0, &ammo, sizeof(nfc_ammo_struct_t));
+        nfc_write(&a_gun_ctx->nfc, NTAG_215_START_PAGE, &ammo, sizeof(nfc_ammo_struct_t));
     }
     else
     {
         nfc_ammo_struct_t ammo;
-        if (!nfc_read(&a_gun_ctx->nfc, 0, &ammo, sizeof(nfc_ammo_struct_t)))
+        if (!nfc_read(&a_gun_ctx->nfc, NTAG_215_START_PAGE, &ammo, sizeof(nfc_ammo_struct_t)))
             return false;
 
         if (ammo.ammo_guid != AMMO_GUID)
@@ -87,7 +86,7 @@ static inline bool gun_reload(gun_context_t* a_gun_ctx)
             ammo.max_ammo = a_gun_ctx->max_ammo;
             ammo.current_ammo = a_gun_ctx->max_ammo;
 
-            nfc_write(&a_gun_ctx->nfc, 0, &ammo, sizeof(nfc_ammo_struct_t));
+            nfc_write(&a_gun_ctx->nfc, NTAG_215_START_PAGE, &ammo, sizeof(nfc_ammo_struct_t));
         }
         a_gun_ctx->current_ammo = ammo.current_ammo + a_gun_ctx->current_ammo;
         a_gun_ctx->magazine_loaded = true;
