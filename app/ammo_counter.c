@@ -172,6 +172,7 @@ static void ammo_render(app_context_t* a_app, render_context_t* a_ctx)
 static void ammo_close(app_context_t* a_app)
 {
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
+    nfc_deinit(&gun_ctx->nfc);
 }
 
 static void ammo_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
@@ -202,10 +203,10 @@ static void ammo_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
 
     nfc_init_info_t nfc_init_info;
-    nfc_init_info.pin_sda = 31;
-    nfc_init_info.pin_scl = 32;
-    nfc_init_info.i2c = i2c1;
-    if (nfc_init(&gun_ctx->nfc, &nfc_init_info, DRIVER_PN532))
+    nfc_init_info.pin_sda = 8;
+    nfc_init_info.pin_scl = 9;
+    nfc_init_info.i2c = i2c0;
+    if (!nfc_init(&gun_ctx->nfc, &nfc_init_info, DRIVER_PN532))
     {
         render_fill(a_ctx, COLOR_RED);
         return;

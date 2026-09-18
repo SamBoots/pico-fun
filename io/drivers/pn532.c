@@ -23,6 +23,8 @@
 #define PN532_TFI_HOST  0xD4
 #define PN532_TFI_PN532 0xD5
 
+#define I2C_TIMEOUT_US 50000 // 50ms per raw I2C transaction
+
 static uint8_t calc_lcs(uint8_t a_len)
 {
     return (~a_len) + 1;
@@ -35,14 +37,53 @@ static uint8_t calc_dcs(const uint8_t* a_data, size_t a_len)
     return (~sum) + 1;
 }
 
-static void pn532_write_raw(const nfc_context_t* a_ctx, const uint8_t* a_buf, size_t a_len)
+// --- bus recovery: unstick a slave that's holding SDA/SCL low mid-transaction ---
+static void i2c_bus_recover(uint a_sda_pin, uint a_scl_pin)
 {
-    i2c_write_blocking(a_ctx->i2c, a_ctx->address, a_buf, a_len, false);
+    gpio_set_function(a_sda_pin, GPIO_FUNC_SIO);
+    gpio_set_function(a_scl_pin, GPIO_FUNC_SIO);
+
+    gpio_set_dir(a_sda_pin, GPIO_IN);
+    gpio_pull_up(a_sda_pin);
+    gpio_set_dir(a_scl_pin, GPIO_OUT);
+    gpio_pull_up(a_scl_pin);
+
+    // toggle SCL up to 9 times (max bits in one stuck byte) so a wedged slave
+    // finishes clocking out whatever it thinks it still owes us
+    for (int i = 0; i < 9; i++)
+    {
+        if (gpio_get(a_sda_pin)) break; // SDA already released, bus is free
+
+        gpio_put(a_scl_pin, 0);
+        sleep_us(5);
+        gpio_put(a_scl_pin, 1);
+        sleep_us(5);
+    }
+
+    // manual STOP condition: SDA low->high while SCL is high
+    gpio_set_dir(a_sda_pin, GPIO_OUT);
+    gpio_put(a_sda_pin, 0);
+    sleep_us(5);
+    gpio_put(a_scl_pin, 1);
+    sleep_us(5);
+    gpio_put(a_sda_pin, 1);
+    sleep_us(5);
+
+    gpio_set_dir(a_sda_pin, GPIO_IN); // back to input, pull-up holds it high
 }
 
-static void pn532_read_raw(const nfc_context_t* a_ctx, uint8_t* a_buf, size_t a_len)
+static bool pn532_write_raw(const nfc_context_t* a_ctx, const uint8_t* a_buf, size_t a_len)
 {
-    i2c_read_blocking(a_ctx->i2c, a_ctx->address, a_buf, a_len, false);
+    absolute_time_t timeout = make_timeout_time_us(I2C_TIMEOUT_US);
+    int ret = i2c_write_blocking_until(a_ctx->i2c, a_ctx->address, a_buf, a_len, false, timeout);
+    return ret == (int)a_len;
+}
+
+static bool pn532_read_raw(const nfc_context_t* a_ctx, uint8_t* a_buf, size_t a_len)
+{
+    absolute_time_t timeout = make_timeout_time_us(I2C_TIMEOUT_US);
+    int ret = i2c_read_blocking_until(a_ctx->i2c, a_ctx->address, a_buf, a_len, false, timeout);
+    return ret == (int)a_len;
 }
 
 static bool pn532_wait_ready(const nfc_context_t* a_ctx)
@@ -64,13 +105,17 @@ static bool pn532_read_ack(const nfc_context_t* a_ctx)
 {
     static const uint8_t ACK[] = { 0x00, 0x00, 0xFF, 0x00, 0xFF, 0x00 };
     uint8_t buf[7]; // status byte + 6 ack bytes
+    uint32_t timeout = 1000; // ms
+    uint32_t start   = to_ms_since_boot(get_absolute_time());
 
-    if (!pn532_wait_ready(a_ctx)) return false;
+    do {
+        if (pn532_read_raw(a_ctx, buf, sizeof(buf)) && buf[0] == 0x01)
+            return memcmp(buf + 1, ACK, sizeof(ACK)) == 0;
 
-    pn532_read_raw(a_ctx, buf, sizeof(buf));
+        sleep_ms(10);
+    } while (to_ms_since_boot(get_absolute_time()) - start < timeout);
 
-    // buf[0] is status byte, buf[1..6] is ACK frame
-    return memcmp(buf + 1, ACK, sizeof(ACK)) == 0;
+    return false; // timed out
 }
 
 static bool pn532_send_command(const nfc_context_t* a_ctx, const uint8_t* a_data, uint8_t a_data_len)
@@ -97,7 +142,8 @@ static bool pn532_send_command(const nfc_context_t* a_ctx, const uint8_t* a_data
     frame[idx++] = calc_dcs(dcs_buf, a_data_len + 1);
     frame[idx++] = PN532_POSTAMBLE;
 
-    pn532_write_raw(a_ctx, frame, idx);
+    if (!pn532_write_raw(a_ctx, frame, idx))
+        return false;
     return pn532_read_ack(a_ctx);
 }
 
@@ -106,7 +152,8 @@ static bool pn532_read_response(const nfc_context_t* a_ctx, uint8_t* a_buf, size
     if (!pn532_wait_ready(a_ctx)) return false;
 
     uint8_t raw[64];
-    pn532_read_raw(a_ctx, raw, sizeof(raw));
+    if (!pn532_read_raw(a_ctx, raw, sizeof(raw)))
+        return false;
 
     // data starts at index 8
     size_t copy_len = a_len < (sizeof(raw) - 8) ? a_len : sizeof(raw) - 8;
@@ -134,6 +181,12 @@ bool pn532_init(nfc_context_t* a_ctx, nfc_init_info_t* a_init_info)
     a_ctx->read = pn532_read;
     a_ctx->write = pn532_write;
     a_ctx->detect_tag = pn532_detect_tag;
+    a_ctx->close = pn532_deinit;
+
+    i2c_deinit(a_ctx->i2c);
+    // unstick the bus BEFORE claiming the pins for I2C, in case the PN532
+    // was left mid-transaction from a previous reset/power blip
+    i2c_bus_recover(a_ctx->pin_sda, a_ctx->pin_scl);
 
     i2c_init(a_ctx->i2c, 400000);
     gpio_set_function(a_ctx->pin_sda, GPIO_FUNC_I2C);
@@ -144,13 +197,23 @@ bool pn532_init(nfc_context_t* a_ctx, nfc_init_info_t* a_init_info)
     sleep_ms(500);
 
     uint8_t buf;
-    int ret = i2c_read_blocking(a_ctx->i2c, PN532_I2C_ADDR, &buf, 1, false);
+    absolute_time_t probe_timeout = make_timeout_time_us(I2C_TIMEOUT_US);
+    int ret = i2c_read_blocking_until(a_ctx->i2c, PN532_I2C_ADDR, &buf, 1, false, probe_timeout);
     if (ret < 0) {
-        // nothing at 0x24 — wiring or address issue
         return false;
     }
 
     return pn532_sam_config(a_ctx);
+}
+
+bool pn532_deinit(const nfc_context_t* a_ctx)
+{
+    i2c_deinit(a_ctx->i2c);
+    gpio_set_function(a_ctx->pin_sda, GPIO_FUNC_SIO);
+    gpio_set_function(a_ctx->pin_scl, GPIO_FUNC_SIO);
+    gpio_set_dir(a_ctx->pin_sda, GPIO_IN);
+    gpio_set_dir(a_ctx->pin_scl, GPIO_IN);
+    return true;
 }
 
 bool pn532_read(const nfc_context_t* a_ctx, uint8_t a_offset, void* a_data, uint32_t a_len)

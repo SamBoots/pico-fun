@@ -28,3 +28,8 @@ bool nfc_detect_tag(const nfc_context_t* a_ctx)
 {
     return a_ctx->detect_tag(a_ctx);
 }
+
+bool nfc_deinit(const nfc_context_t* a_ctx)
+{
+    return a_ctx->close(a_ctx);
+}
