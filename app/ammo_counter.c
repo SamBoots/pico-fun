@@ -176,6 +176,11 @@ static void ammo_close(app_context_t* a_app)
 {
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
     nfc_deinit(&gun_ctx->nfc);
+    button_free_context(&gun_ctx->fire_button);
+    button_free_context(&gun_ctx->reload_button);
+    button_free_context(&gun_ctx->emergency_reload_button);
+    button_free_context(&gun_ctx->full_auto_button);
+    button_free_context(&gun_ctx->semi_auto_button);
 }
 
 static void ammo_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)

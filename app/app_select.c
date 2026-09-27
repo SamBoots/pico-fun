@@ -288,6 +288,10 @@ void app_select_render(app_context_t* a_app, render_context_t* a_ctx)
 void app_select_close(app_context_t* a_app)
 {
     app_select_context_t* app_select = (app_select_context_t*)a_app->user_data;
+    button_free_context(&app_select->incr_button);
+    button_free_context(&app_select->next_button);
+    button_free_context(&app_select->select_app_button);
+    button_free_context(&app_select->select_app_button_extra);
 }
 
 void app_select_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)

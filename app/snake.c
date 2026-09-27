@@ -155,6 +155,8 @@ void snake_render(app_context_t* a_app, render_context_t* a_ctx)
 void snake_close(app_context_t* a_app)
 {
     snake_context_t* snake_ctx = (snake_context_t*)a_app->user_data;
+    button_free_context(&snake_ctx->left_button);
+    button_free_context(&snake_ctx->right_button);
 }
 
 void snake_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)

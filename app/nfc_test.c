@@ -70,6 +70,7 @@ static void nfc_close(app_context_t* a_app)
 {
     nfc_test_context_t* nfc_test_ctx = (nfc_test_context_t*)a_app->user_data;
     nfc_deinit(&nfc_test_ctx->nfc_rw);
+    button_free_context(&nfc_test_ctx->button_next_page);
 }
 
 static void nfc_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
