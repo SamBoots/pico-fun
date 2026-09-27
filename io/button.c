@@ -5,7 +5,9 @@
 #include "button.h"
 #include "stdio.h"
 
-int button_init_context(button_context_t* a_ctx, uint16_t a_pin, uint16_t a_debounce_ms)
+uint8_t s_pin_occupancy[26];
+
+int button_init_context(button_context_t* a_ctx, uint8_t a_pin, uint16_t a_debounce_ms)
 {
     gpio_init(a_pin);  
     gpio_set_dir(a_pin,  GPIO_IN); 
@@ -15,12 +17,17 @@ int button_init_context(button_context_t* a_ctx, uint16_t a_pin, uint16_t a_debo
     a_ctx->debounce_ms = a_debounce_ms;
     a_ctx->previous = false;
     a_ctx->current = false;
+
+    ++s_pin_occupancy[a_pin];
     return 1;
 }
 
 int button_free_context(button_context_t* a_ctx)
 {
-    gpio_deinit(a_ctx->pin);
+    --s_pin_occupancy[a_ctx->pin];
+    if (s_pin_occupancy[a_ctx->pin] = 0)
+        gpio_deinit(a_ctx->pin);
+    return 1;
 }
 
 int button_update(button_context_t* a_ctx, uint32_t a_now_ms)
