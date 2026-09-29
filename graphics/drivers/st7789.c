@@ -207,29 +207,36 @@ static void draw_glyph(render_context_t* a_ctx, uint16_t a_glyph_w, uint16_t a_g
 
     for (int i = 0; i < a_len; i++)
     {
-        uint8_t* buf = get_buffer_and_swap(a_ctx);
         const uint8_t* glyph = a_lookup_fn(a_str[i]);
-        
-        int lead_spacing = (i == 0) ? 0 : a_spacing;   // no gap before the first glyph
+
+        int lead_spacing = (i == 0) ? 0 : a_spacing;
         int rect_w  = glyph_w + lead_spacing;
         int rect_x  = a_x + i * cell_w - lead_spacing;
 
-        fill_buf(buf, rect_w, glyph_h, a_back_color);
-
-        for (int y = 0; y < glyph_h; y++)
-        {
-            uint8_t bits = glyph[y / a_scale];
-            for (int x = 0; x < glyph_w; x++)
-                if (bits & (1 << (7 - x / a_scale)))
-                    place_pixel(buf, rect_w, lead_spacing + x, y, a_front_color);
-        }
+        int rows_per_band = BAND_BUFFER_SIZE / (rect_w * 2);
+        if (rows_per_band < 1) rows_per_band = 1;
 
         if (i > 0) end_draw(a_ctx);
-
         begin_draw(a_ctx, rect_x, rect_x + rect_w - 1, a_y, a_y + glyph_h - 1);
-        draw_band(a_ctx, rect_w, glyph_h, buf);
-    }
 
+        for (int row = 0; row < glyph_h; row += rows_per_band)
+        {
+            int band_h = (row + rows_per_band > glyph_h) ? (glyph_h - row) : rows_per_band;
+            uint8_t* buf = get_buffer_and_swap(a_ctx);
+
+            fill_buf(buf, rect_w, band_h, a_back_color);
+
+            for (int y = 0; y < band_h; y++)
+            {
+                uint8_t bits = glyph[(row + y) / a_scale];
+                for (int x = 0; x < glyph_w; x++)
+                    if (bits & (1 << (7 - x / a_scale)))
+                        place_pixel(buf, rect_w, lead_spacing + x, y, a_front_color);
+            }
+
+            draw_band(a_ctx, rect_w, band_h, buf);
+        }
+    }
     end_draw(a_ctx);
 }
 

@@ -9,15 +9,18 @@ uint8_t s_pin_occupancy[26];
 
 int button_init_context(button_context_t* a_ctx, uint8_t a_pin, uint16_t a_debounce_ms)
 {
-    gpio_init(a_pin);  
-    gpio_set_dir(a_pin,  GPIO_IN); 
-    gpio_pull_up(a_pin);
     a_ctx->last_change_ms = 0;
     a_ctx->pin = a_pin;
     a_ctx->debounce_ms = a_debounce_ms;
     a_ctx->previous = false;
     a_ctx->current = false;
 
+    if (s_pin_occupancy[a_ctx->pin] == 0)
+    {
+        gpio_init(a_pin);
+        gpio_set_dir(a_pin,  GPIO_IN);
+        gpio_pull_up(a_pin);
+    }
     ++s_pin_occupancy[a_pin];
     return 1;
 }
@@ -25,7 +28,7 @@ int button_init_context(button_context_t* a_ctx, uint8_t a_pin, uint16_t a_debou
 int button_free_context(button_context_t* a_ctx)
 {
     --s_pin_occupancy[a_ctx->pin];
-    if (s_pin_occupancy[a_ctx->pin] = 0)
+    if (s_pin_occupancy[a_ctx->pin] == 0)
         gpio_deinit(a_ctx->pin);
     return 1;
 }

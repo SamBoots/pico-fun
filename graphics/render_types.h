@@ -8,7 +8,7 @@
 #define ST7789_MAX_WIDTH 320
 #define SSD1306_MAX_FRAMEBUFFER 1024
 
-#define BAND_ROWS 128
+#define BAND_ROWS 16
 #define BAND_BUFFER_SIZE (ST7789_MAX_WIDTH * BAND_ROWS * sizeof(uint16_t))
 
 #define COLOR_BLACK   0x0000
@@ -36,18 +36,18 @@ typedef struct render_context_t
         struct
         {
             spi_inst_t* spi;
-            uint pin_clk;
-            uint pin_din;
-            uint pin_cs;
-            uint pin_dc;
-            uint pin_rst;
-            uint pin_bl;
+            uint8_t pin_clk;
+            uint8_t pin_din;
+            uint8_t pin_cs;
+            uint8_t pin_dc;
+            uint8_t pin_rst;
+            uint8_t pin_bl;
         } spi;
 
         struct
         {
-            uint pin_sda;
-            uint pin_scl;
+            uint8_t pin_sda;
+            uint8_t pin_scl;
             uint8_t address;
             uint16_t col_start, col_end;
             uint16_t row_start, row_end;
