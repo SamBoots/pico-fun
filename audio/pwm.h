@@ -1,10 +1,6 @@
 #ifndef PWM_H
 #define PWM_H
 
-typedef struct memory_arena_t memory_arena_t;
-typedef struct render_context_t render_context_t;
-typedef struct app_context_t app_context_t;
-
 typedef struct pwm_context_t
 {
     uint16_t pin;

@@ -52,7 +52,7 @@ io/drivers/pn532.c
 io/button.c
 io/fs.c
 io/nfc.c
-audio/pwm.c
+io/pwm.c
 )
 
 if(APP_AMMO)
