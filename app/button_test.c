@@ -1,10 +1,10 @@
-#include "pico/stdlib.h"
+#include "defines/types.h"
 #include "app.h"
-#include "../io/io_types.h"
-#include "../io/button.h"
-#include "../memory/memory_arena.h"
-#include "../graphics/renderer.h"
-#include "../graphics/render_types.h"
+#include "io/io_types.h"
+#include "io/button.h"
+#include "memory/memory_arena.h"
+#include "graphics/renderer.h"
+#include "graphics/render_types.h"
 #include "math.h"
 
 typedef enum { BUTTON_RELEASE, BUTTON_PRESSED, BUTTON_HELD } button_status_t;
@@ -13,8 +13,8 @@ typedef enum { BUTTON_RELEASE, BUTTON_PRESSED, BUTTON_HELD } button_status_t;
 
 typedef struct button_test_params_t
 {
-    uint8_t button_count;
-    uint8_t button_pin[BUTTON_MAX];
+    u8 button_count;
+    u8 button_pin[BUTTON_MAX];
 } button_test_params_t;
 
 typedef struct button_test_context_t
@@ -22,13 +22,13 @@ typedef struct button_test_context_t
     button_context_t buttons[BUTTON_MAX];
     button_status_t button_old_statuses[BUTTON_MAX];
     button_status_t button_new_statuses[BUTTON_MAX];
-    int16_t sector_width;
-    int16_t sector_height;
+    i16 sector_width;
+    i16 sector_height;
     bool height_split;
-    int8_t button_count;
+    i8 button_count;
 } button_test_context_t;
 
-static void button_status_string(button_status_t a_status, const char** a_pstring, uint16_t* a_pstr_len)
+static void button_status_string(button_status_t a_status, const char** a_pstring, u16* a_pstr_len)
 {
     switch (a_status)
     {
@@ -47,16 +47,16 @@ static void button_status_string(button_status_t a_status, const char** a_pstrin
     }
 }
 
-static void button_draw_areas(render_context_t* a_ctx, button_test_context_t* a_app_ctx, uint8_t a_button_count)
+static void button_draw_areas(render_context_t* a_ctx, button_test_context_t* a_app_ctx, u8 a_button_count)
 {
     if (a_app_ctx->height_split)
     {
-        uint16_t ping_pong_color_0 = COLOR_BLUE;
-        uint16_t ping_pong_color_1 = COLOR_GREEN;
+        u16 ping_pong_color_0 = COLOR_BLUE;
+        u16 ping_pong_color_1 = COLOR_GREEN;
         for (size_t i = 0; i < a_button_count; i++)
         {
-            uint16_t width = (i >= 4) ? a_app_ctx->sector_width : 0;
-            uint16_t height = (i % 4) * a_app_ctx->sector_height;
+            u16 width = (i >= 4) ? a_app_ctx->sector_width : 0;
+            u16 height = (i % 4) * a_app_ctx->sector_height;
             if (ping_pong_color_0 == COLOR_GREEN)
             {
                 ping_pong_color_0 = COLOR_BLUE;
@@ -68,7 +68,7 @@ static void button_draw_areas(render_context_t* a_ctx, button_test_context_t* a_
                 ping_pong_color_1 = COLOR_BLUE;
             }
             const char* str;
-            uint16_t str_len;
+            u16 str_len;
             button_status_string(a_app_ctx->button_new_statuses[i], &str, &str_len);
             render_draw_rect(a_ctx, width, width + a_app_ctx->sector_width, height, height + a_app_ctx->sector_height, ping_pong_color_1);
             render_8x16glyphs(a_ctx, str, str_len, 4, 2, ping_pong_color_0, ping_pong_color_1, width, height);
@@ -76,12 +76,12 @@ static void button_draw_areas(render_context_t* a_ctx, button_test_context_t* a_
     }
     else
     {
-        uint16_t ping_pong_color_0 = COLOR_BLUE;
-        uint16_t ping_pong_color_1 = COLOR_GREEN;
+        u16 ping_pong_color_0 = COLOR_BLUE;
+        u16 ping_pong_color_1 = COLOR_GREEN;
         for (size_t i = 0; i < a_button_count; i++)
         {
-            uint16_t width = (i % 4) * a_app_ctx->sector_width;
-            uint16_t height = (i >= 4) ? a_app_ctx->sector_height : 0;
+            u16 width = (i % 4) * a_app_ctx->sector_width;
+            u16 height = (i >= 4) ? a_app_ctx->sector_height : 0;
             if (ping_pong_color_0 == COLOR_GREEN)
             {
                 ping_pong_color_0 = COLOR_BLUE;
@@ -93,7 +93,7 @@ static void button_draw_areas(render_context_t* a_ctx, button_test_context_t* a_
                 ping_pong_color_1 = COLOR_BLUE;
             }
             const char* str;
-            uint16_t str_len;
+            u16 str_len;
             button_status_string(a_app_ctx->button_new_statuses[i], &str, &str_len);
             render_draw_rect(a_ctx, width,  width + a_app_ctx->sector_width, height, height + a_app_ctx->sector_height, ping_pong_color_1);
             render_8x16glyphs(a_ctx, str, str_len, 4, 2, ping_pong_color_0, ping_pong_color_1, width, height);
@@ -101,7 +101,7 @@ static void button_draw_areas(render_context_t* a_ctx, button_test_context_t* a_
     }
 }
 
-static app_update_status_t input_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
+static app_update_status_t input_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, u32 a_now_ms)
 {
     button_test_context_t* app_ctx = (button_test_context_t*)a_app->user_data;
     
@@ -150,7 +150,7 @@ static void input_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
     *a_desc_count = 8;
 }
 
-static void input_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
+static void input_default_params(u8* a_param_buf, app_param_descriptor_t* a_descs)
 {
     button_test_params_t* defaults = (button_test_params_t*)a_param_buf;
     defaults->button_count = 8;

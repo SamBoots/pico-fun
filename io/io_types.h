@@ -3,9 +3,9 @@
 
 typedef struct button_context_t
 {
-    uint32_t last_change_ms;
-    uint16_t debounce_ms;
-    uint8_t pin;
+    u32 last_change_ms;
+    u16 debounce_ms;
+    u8 pin;
     bool previous;
     bool current;
 } button_context_t;

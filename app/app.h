@@ -12,10 +12,10 @@ typedef enum { PARAM_U16, PARAM_U8, PARAM_BOOL } param_type_t;
 typedef struct app_param_descriptor_t
 {
     const char* label;
-    uint16_t label_len;
+    u16 label_len;
     param_type_t type;
-    uint16_t byte_offset;
-    uint16_t min, max;
+    u16 byte_offset;
+    u16 min, max;
 } app_param_descriptor_t;
 
 #define APP_PARAM(a_label, a_type, a_offsetoff, a_min, a_max)\
@@ -30,16 +30,16 @@ typedef struct app_param_descriptor_t
     })
 
 typedef void (*app_init_t)(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, const void* a_app_params);
-typedef app_update_status_t (*app_update_t)(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms);
+typedef app_update_status_t (*app_update_t)(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, u32 a_now_ms);
 typedef void (*app_render_t)(app_context_t* a_app, render_context_t* a_ctx);
 typedef void (*app_close_t)(app_context_t* a_app);
-typedef void (*app_default_sizes)(size_t* a_param_buf_size, size_t* a_desc_count);
-typedef void (*app_default_params)(uint8_t* a_param_buf, app_param_descriptor_t* a_descs);
+typedef void (*app_default_sizes)(usize* a_param_buf_size, usize* a_desc_count);
+typedef void (*app_default_params)(u8* a_param_buf, app_param_descriptor_t* a_descs);
 
 typedef struct app_entry_t
 {
     const char* name;
-    int16_t name_len;
+    i16 name_len;
     app_init_t init;
     app_update_t update;
     app_render_t render;
@@ -50,8 +50,8 @@ typedef struct app_entry_t
 
 typedef struct app_context_t
 {
-    uint32_t memory_arena_marker; // start of the app's memory
-    uint8_t* user_data;
+    u32 memory_arena_marker; // start of the app's memory
+    u8* user_data;
     app_update_t update;
     app_render_t render;
     app_close_t close;

@@ -1,11 +1,11 @@
-#include "pico/stdlib.h"
+#include "defines/types.h"
 #include "app.h"
-#include "../io/io_types.h"
-#include "../io/button.h"
-#include "../io/nfc.h"
-#include "../graphics/render_types.h"
-#include "../graphics/renderer.h"
-#include "../memory/memory_arena.h"
+#include "io/io_types.h"
+#include "io/button.h"
+#include "io/nfc.h"
+#include "graphics/render_types.h"
+#include "graphics/renderer.h"
+#include "memory/memory_arena.h"
 
 // replace these with own solution
 #include <stdio.h>
@@ -13,19 +13,19 @@
 
 typedef struct nfc_test_params_t
 {
-    uint8_t pad;
+    u8 pad;
 } nfc_test_params_t;
 
 typedef struct nfc_test_context_t
 {
     nfc_context_t nfc_rw;
     button_context_t button_next_page;
-    int current_page;
-    uint8_t page_increment;
-    uint8_t nfc_data[16];   // for now 16 due to the nfc tags having a page increment of 4
+    i32 current_page;
+    u8 page_increment;
+    u8 nfc_data[16];   // for now 16 due to the nfc tags having a page increment of 4
 } nfc_test_context_t;
 
-static app_update_status_t nfc_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
+static app_update_status_t nfc_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, u32 a_now_ms)
 {
     nfc_test_context_t* nfc_test_ctx = (nfc_test_context_t*)a_app->user_data;
 
@@ -49,9 +49,9 @@ static void nfc_render(app_context_t* a_app, render_context_t* a_ctx)
     if (nfc_test_ctx->current_page != -4)
     {
         render_fill(a_ctx, COLOR_BLUE);
-        for (int i = 0; i < nfc_test_ctx->page_increment; i++) {
-            uint8_t page = nfc_test_ctx->current_page + i;
-            const uint8_t *p = &nfc_test_ctx->nfc_data[i * 4];
+        for (isize i = 0; i < nfc_test_ctx->page_increment; i++) {
+            u8 page = nfc_test_ctx->current_page + i;
+            const u8 *p = &nfc_test_ctx->nfc_data[i * 4];
 
             char byte_text[24];
             snprintf(byte_text, sizeof(byte_text),
@@ -79,7 +79,7 @@ static void nfc_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
     *a_desc_count = 1;
 }
 
-static void nfc_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
+static void nfc_default_params(u8* a_param_buf, app_param_descriptor_t* a_descs)
 {
     nfc_test_params_t* defaults = (nfc_test_params_t*)a_param_buf;
     defaults->pad = 0;

@@ -1,6 +1,7 @@
 #define TEST_H 240
 #define TEST_W 280
  
+#include "defines/types.h"
 #include "pico/stdlib.h"
 #include "graphics/render_types.h"
 #include "graphics/renderer.h"
@@ -64,7 +65,7 @@ int main(void)
     uint32_t last_app_loaded = load_new_app_ms;
 
     render_load_func(&g_render_ctx, DRIVER_ST7789);
-    render_init_context(&g_render_ctx, TEST_W, TEST_H, 20, 0, 10 * 1000);
+    render_init_context(&g_render_ctx, TEST_W, TEST_H, 20, 0, 0);
     app_context_t app;
     memory_set(&app, 0, sizeof(app));
     switch_app(&app, app_select_init_app, NULL);

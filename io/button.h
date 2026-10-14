@@ -3,9 +3,9 @@
 
 typedef struct button_context_t button_context_t;
 
-int button_init_context(button_context_t* a_ctx, uint8_t a_pin, uint16_t a_debounce_ms);
-int button_free_context(button_context_t* a_ctx);
-int button_update(button_context_t* a_ctx, uint32_t a_now_ms);
+bool button_init_context(button_context_t* a_ctx, u8 a_pin, u16 a_debounce_ms);
+bool button_free_context(button_context_t* a_ctx);
+bool button_update(button_context_t* a_ctx, u32 a_now_ms);
 
 bool button_pressed(const button_context_t* a_ctx);
 bool button_released(const button_context_t* a_ctx);

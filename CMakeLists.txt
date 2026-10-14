@@ -47,12 +47,11 @@ app/app_select.c
 memory/memory_arena.c
 graphics/renderer.c
 graphics/drivers/st7789.c
-graphics/drivers/ssd1306.c
 io/drivers/pn532.c
 io/button.c
 io/fs.c
 io/nfc.c
-io/pwm.c
+os/chip/OS_RP2040.c
 )
 
 if(APP_AMMO)
@@ -63,7 +62,6 @@ if(APP_SNAKE)
 endif()
 if(ADD_DEBUG_APPS)
     target_sources(S_OS PRIVATE 
-    app/pwm_test.c
     app/button_test.c
     app/nfc_test.c)
 endif()

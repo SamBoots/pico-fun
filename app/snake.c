@@ -1,25 +1,26 @@
-#include <stdlib.h>
+#include "defines/types.h"
 #include "pico/stdlib.h"
+#include "stdlib.h"
 #include "app.h"
-#include "../graphics/render_types.h"
-#include "../graphics/renderer.h"
-#include "../io/io_types.h"
-#include "../io/button.h"
-#include "../memory/memory_arena.h"
+#include "graphics/render_types.h"
+#include "graphics/renderer.h"
+#include "io/io_types.h"
+#include "io/button.h"
+#include "memory/memory_arena.h"
 
 #define MAX_SNAKE 128 // cheat
 
-static inline int wrap(int a_val, int a_max) 
+static inline isize wrap(isize a_val, isize a_max) 
 {
     return ((a_val % a_max) + a_max) % a_max;
 }
 
 typedef struct snake_params_t
 {
-    uint8_t scale;
+    u8 scale;
 } snake_params_t;
 
-static int16_t dirs[2][4] =
+static i16 dirs[2][4] =
 {
     { 1, 0, -1, 0 },
     { 0, 1, 0, -1 }
@@ -30,36 +31,36 @@ typedef struct snake_context_t
     button_context_t left_button;
     button_context_t right_button;
 
-    uint32_t ms_last_frame;
-    uint32_t ms_per_frame;
+    u32 ms_last_frame;
+    u32 ms_per_frame;
     
-    uint16_t map_scale;
-    uint16_t map_x;
-    uint16_t map_y;
-    uint8_t* map;
+    u16 map_scale;
+    u16 map_x;
+    u16 map_y;
+    u8* map;
 
-    uint16_t cur_dir;
+    u16 cur_dir;
 
-    uint16_t snake[MAX_SNAKE];
-    uint16_t snake_size;
+    u16 snake[MAX_SNAKE];
+    u16 snake_size;
 } snake_context_t;
 
-static void snake_set_tile(snake_context_t* a_snake_ctx, uint32_t a_index, bool a_active)
+static void snake_set_tile(snake_context_t* a_snake_ctx, u32 a_index, bool a_active)
 {
-    uint32_t mask = 1 << (a_index & 7);
-    uint32_t byte = a_index >> 3;
+    u32 mask = 1 << (a_index & 7);
+    u32 byte = a_index >> 3;
     a_snake_ctx->map[byte] = (a_snake_ctx->map[byte] & ~mask) | (a_active << (a_index & 7));
 }
 
-static inline bool snake_read_tile(snake_context_t* a_snake_ctx, uint32_t a_index)
+static inline bool snake_read_tile(snake_context_t* a_snake_ctx, u32 a_index)
 {
     return (a_snake_ctx->map[a_index >> 3] >> (a_index & 7)) & 1;
 }
 
 static void snake_place_apple(snake_context_t* a_snake_ctx)
 {
-    uint16_t apple_pos = rand() % (a_snake_ctx->map_x * a_snake_ctx->map_y);
-    for (int i = 0; i < a_snake_ctx->snake_size; i++)
+    u16 apple_pos = rand() % (a_snake_ctx->map_x * a_snake_ctx->map_y);
+    for (isize i = 0; i < a_snake_ctx->snake_size; i++)
     {
         if (a_snake_ctx->snake[i] == apple_pos)
         {
@@ -72,19 +73,19 @@ static void snake_place_apple(snake_context_t* a_snake_ctx)
 
 static bool snake_move(snake_context_t* a_snake_ctx)
 {
-    int16_t x = a_snake_ctx->snake[0] % a_snake_ctx->map_x + dirs[0][a_snake_ctx->cur_dir];
-    int16_t y = a_snake_ctx->snake[0] / a_snake_ctx->map_x + dirs[1][a_snake_ctx->cur_dir];
+    i16 x = a_snake_ctx->snake[0] % a_snake_ctx->map_x + dirs[0][a_snake_ctx->cur_dir];
+    i16 y = a_snake_ctx->snake[0] / a_snake_ctx->map_x + dirs[1][a_snake_ctx->cur_dir];
     if (x > a_snake_ctx->map_x || x < 0 || y > a_snake_ctx->map_y || y < 0)
         return false;
 
-    uint16_t new_head = y * a_snake_ctx->map_x + x;
-    uint16_t old_tail = a_snake_ctx->snake[a_snake_ctx->snake_size - 1];
+    u16 new_head = y * a_snake_ctx->map_x + x;
+    u16 old_tail = a_snake_ctx->snake[a_snake_ctx->snake_size - 1];
 
     // update snek
-    for (int i = a_snake_ctx->snake_size - 1; i > 0; i--)
+    for (isize i = a_snake_ctx->snake_size - 1; i > 0; i--)
         a_snake_ctx->snake[i] = a_snake_ctx->snake[i - 1];
 
-    for (int i = 0; i < a_snake_ctx->snake_size - 1; i++)
+    for (isize i = 0; i < a_snake_ctx->snake_size - 1; i++)
         if (a_snake_ctx->snake[i] == new_head)
             return false;
     
@@ -115,10 +116,10 @@ static void snake_start_game(snake_context_t* a_snake_ctx)
     snake_place_apple(a_snake_ctx);
 }
 
-app_update_status_t snake_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
+app_update_status_t snake_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, u32 a_now_ms)
 {
     snake_context_t* snake_ctx = (snake_context_t*)a_app->user_data;
-    if ((uint32_t)(a_now_ms - snake_ctx->ms_last_frame) > snake_ctx->ms_per_frame)
+    if ((u32)(a_now_ms - snake_ctx->ms_last_frame) > snake_ctx->ms_per_frame)
     {
         button_update(&snake_ctx->left_button, a_now_ms);
         button_update(&snake_ctx->right_button, a_now_ms);
@@ -145,8 +146,8 @@ void snake_render(app_context_t* a_app, render_context_t* a_ctx)
 {
     snake_context_t* snake_ctx = (snake_context_t*)a_app->user_data;
     render_draw_rect(a_ctx, 0, snake_ctx->map_x * snake_ctx->map_scale, 0, snake_ctx->map_y * snake_ctx->map_scale, 0);
-    for (int x = 0; x < snake_ctx->map_x * snake_ctx->map_scale; x += snake_ctx->map_scale)
-        for (int y = 0; y < snake_ctx->map_y * snake_ctx->map_scale; y += snake_ctx->map_scale)
+    for (isize x = 0; x < snake_ctx->map_x * snake_ctx->map_scale; x += snake_ctx->map_scale)
+        for (isize y = 0; y < snake_ctx->map_y * snake_ctx->map_scale; y += snake_ctx->map_scale)
             if (snake_read_tile(snake_ctx, (y / snake_ctx->map_scale) * snake_ctx->map_x + (x / snake_ctx->map_scale)))
                 render_draw_rect(a_ctx, x, x + snake_ctx->map_scale, y, y + snake_ctx->map_scale, 255);
     render_flush(a_ctx);
@@ -165,7 +166,7 @@ void snake_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
     *a_desc_count = 1;
 }
 
-void snake_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
+void snake_default_params(u8* a_param_buf, app_param_descriptor_t* a_descs)
 {
     snake_params_t* defaults = (snake_params_t*)a_param_buf;
     defaults->scale = 16;

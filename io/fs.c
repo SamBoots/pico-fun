@@ -1,5 +1,4 @@
-#include <stdlib.h>
-#include "pico/stdlib.h"
+#include "defines/types.h"
 #include "pico/flash.h"
 #include "hardware/flash.h"
 #include "hardware/sync.h"
@@ -17,14 +16,14 @@
 typedef struct fs_entry_t
 {
     char name[FS_MAX_NAME_LEN];
-    uint32_t offset;
-    uint32_t size;
+    u32 offset;
+    u32 size;
 } fs_entry_t;
 
 typedef struct fs_t
 {
-    uint32_t sentinel;
-    uint32_t entry_count;
+    u32 sentinel;
+    u32 entry_count;
     fs_entry_t entries[FS_MAX_FILES];
 } fs_t;
 
@@ -45,7 +44,7 @@ bool fs_init(void)
 
 static fs_entry_t* fs_find_entry(const char* a_name)
 {
-    for (size_t i = 0; i < s_fs.entry_count; i++)
+    for (usize i = 0; i < s_fs.entry_count; i++)
     {
         if (strncmp(s_fs.entries[i].name, a_name, FS_MAX_NAME_LEN) == 0)
             return &s_fs.entries[i];
@@ -53,7 +52,7 @@ static fs_entry_t* fs_find_entry(const char* a_name)
     return NULL;
 }
 
-bool fs_read(const char* a_name, size_t a_name_len, void* a_buf, size_t a_buf_len)
+bool fs_read(const char* a_name, usize a_name_len, void* a_buf, usize a_buf_len)
 {
     if (a_name_len > FS_MAX_NAME_LEN)
         return false;
@@ -68,17 +67,17 @@ bool fs_read(const char* a_name, size_t a_name_len, void* a_buf, size_t a_buf_le
 
 static void fs_flush_index(void)
 {
-    uint8_t sec[FLASH_SECTOR_SIZE];
+    u8 sec[FLASH_SECTOR_SIZE];
     memset(sec, 0XFF, sizeof(sec));
     memcpy(sec, &s_fs, sizeof(fs_t));
 
-    uint32_t interupts = save_and_disable_interrupts();
+    u32 interupts = save_and_disable_interrupts();
     flash_range_erase(FS_INDEX_OFFSET, FLASH_SECTOR_SIZE);
     flash_range_program(FS_INDEX_OFFSET, sec, FLASH_SECTOR_SIZE);
     restore_interrupts(interupts);
 }
 
-bool fs_write(const char* a_name, size_t a_name_len, const void* a_buf, size_t a_buf_len)
+bool fs_write(const char* a_name, usize a_name_len, const void* a_buf, usize a_buf_len)
 {
     if (a_name_len > FS_MAX_NAME_LEN)
         return false;
@@ -92,11 +91,11 @@ bool fs_write(const char* a_name, size_t a_name_len, const void* a_buf, size_t a
     }
     entry->size = a_buf_len;
 
-    uint8_t page[FLASH_PAGE_SIZE];
+    u8 page[FLASH_PAGE_SIZE];
     memset(page, 0XFF, sizeof(page));
     memcpy(page, a_buf, a_buf_len);
 
-    uint32_t interupts = save_and_disable_interrupts();
+    u32 interupts = save_and_disable_interrupts();
     flash_range_erase(entry->offset, FLASH_SECTOR_SIZE);
     flash_range_program(entry->offset, page, FLASH_PAGE_SIZE);
     restore_interrupts(interupts);

@@ -5,14 +5,14 @@
 
 typedef struct memory_arena_t
 {
-    uint8_t buffer[MEMORY_ARENA_SIZE];
-    uint32_t offset;
+    u8 buffer[MEMORY_ARENA_SIZE];
+    u32 offset;
 } memory_arena_t;
 
-uint8_t* memory_arena_allocate(memory_arena_t* a_arena, uint32_t a_size);
-uint32_t memory_arena_get_marker(memory_arena_t* a_arena);
-void memory_arena_set_marker(memory_arena_t* a_arena, uint32_t a_marker);
+u8* memory_arena_allocate(memory_arena_t* a_arena, u32 a_size);
+u32 memory_arena_get_marker(memory_arena_t* a_arena);
+void memory_arena_set_marker(memory_arena_t* a_arena, u32 a_marker);
 
-void* memory_set(void* a_src, int a_val, uint32_t a_len);
+void* memory_set(void* a_src, isize a_val, u32 a_len);
 
 #endif // MEMORY_ARENA_H

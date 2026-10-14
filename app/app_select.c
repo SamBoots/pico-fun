@@ -1,12 +1,12 @@
-#include "pico/stdlib.h"
+#include "defines/types.h"
 #include "app.h"
 #include "app_select.h"
-#include "../io/io_types.h"
-#include "../io/button.h"
-#include "../io/fs.h"
-#include "../memory/memory_arena.h"
-#include "../graphics/render_types.h"
-#include "../graphics/renderer.h"
+#include "io/io_types.h"
+#include "io/button.h"
+#include "io/fs.h"
+#include "memory/memory_arena.h"
+#include "graphics/render_types.h"
+#include "graphics/renderer.h"
 #include "math.h"
 #include "string.h"
 
@@ -19,6 +19,12 @@ typedef enum { CURSOR_TYPE_APP = 0, CURSOR_TYPE_PARAM = 1, CURSOR_TYPE_PARAM_VAL
 const app_entry_t* app_entry_begin(void) { return &__start_app_entries; }
 const app_entry_t* app_entry_end(void)   { return &__stop_app_entries; }
 
+typedef struct os_context_t
+{
+    u8 cpu_mhz;
+    
+} os_context_t;
+
 typedef struct app_select_context_t
 {
     button_context_t incr_button;
@@ -27,12 +33,12 @@ typedef struct app_select_context_t
     button_context_t select_app_button_extra;
 
     cursor_type_t cursor;
-    int16_t cursor_app;
-    int16_t cursor_param;
+    i16 cursor_app;
+    i16 cursor_param;
 
-    uint16_t app_count;
+    u16 app_count;
 
-    uint8_t param_buf[PARAM_BUF_SIZE];
+    u8 param_buf[PARAM_BUF_SIZE];
     size_t param_buf_size;
     app_param_descriptor_t app_descs[PARAM_MAX_DESCRIPTORS];
     size_t app_desc_count;
@@ -43,14 +49,14 @@ static inline void* move_pointer(const void* a_ptr, size_t a_move)
     return (void*)((const unsigned char*)a_ptr + a_move);
 }
 
-static inline int wrap(int a_val, int a_max) 
+static inline isize wrap(isize a_val, isize a_max) 
 {
     return ((a_val % a_max) + a_max) % a_max;
 }
 
-static inline int wrapminmax(int a_val, int a_min, int a_max) 
+static inline isize wrapminmax(isize a_val, isize a_min, isize a_max) 
 {
-    int range = a_max - a_min;
+    isize range = a_max - a_min;
     return ((((a_val - a_min) % range) + range) % range) + a_min;
 }
 
@@ -64,14 +70,14 @@ static inline const app_param_descriptor_t* GetParamCursor(app_select_context_t*
     return &a_app_select->app_descs[a_app_select->cursor_param];
 }
 
-static inline const uint16_t get_u16_param(const app_param_descriptor_t* a_desc, void* a_data)
+static inline const u16 get_u16_param(const app_param_descriptor_t* a_desc, void* a_data)
 {
-    return *(uint16_t*)move_pointer(a_data, a_desc->byte_offset);
+    return *(u16*)move_pointer(a_data, a_desc->byte_offset);
 }
 
-static inline const uint8_t get_u8_param(const app_param_descriptor_t* a_desc, void* a_data)
+static inline const u8 get_u8_param(const app_param_descriptor_t* a_desc, void* a_data)
 {
-    return *(uint8_t*)move_pointer(a_data, a_desc->byte_offset);
+    return *(u8*)move_pointer(a_data, a_desc->byte_offset);
 }
 
 static inline const bool get_bool_param(const app_param_descriptor_t* a_desc, void* a_data)
@@ -82,7 +88,7 @@ static inline const bool get_bool_param(const app_param_descriptor_t* a_desc, vo
 static inline void display_app_info(app_select_context_t* a_app_select, render_context_t* a_ctx)
 {
     const app_entry_t* cursor = GetAppCursor(a_app_select);
-    uint16_t select_color = COLOR_GREEN;
+    u16 select_color = COLOR_GREEN;
     if (a_app_select->cursor == CURSOR_TYPE_APP)
         select_color = COLOR_RED;
     render_8x16glyphs(a_ctx, cursor->name, cursor->name_len, 4, 3, select_color, COLOR_BLACK, 16, 0);
@@ -91,8 +97,8 @@ static inline void display_app_info(app_select_context_t* a_app_select, render_c
 static inline void display_param_info(app_select_context_t* a_app_select, render_context_t* a_ctx)
 {
     const app_param_descriptor_t* param = GetParamCursor(a_app_select);
-    uint16_t param_color = COLOR_GREEN;
-    uint16_t param_val_color = COLOR_GREEN;
+    u16 param_color = COLOR_GREEN;
+    u16 param_val_color = COLOR_GREEN;
     if (a_app_select->cursor == CURSOR_TYPE_PARAM)
         param_color = COLOR_RED;
     else if (a_app_select->cursor == CURSOR_TYPE_PARAM_VAL)
@@ -103,7 +109,7 @@ static inline void display_param_info(app_select_context_t* a_app_select, render
     {
     case PARAM_U16:
     {
-        const uint16_t val = get_u16_param(param, (void*)a_app_select->param_buf);
+        const u16 val = get_u16_param(param, (void*)a_app_select->param_buf);
         char str[5] = {0, 0, 0, 0, 0};
         if (val)
         {
@@ -118,7 +124,7 @@ static inline void display_param_info(app_select_context_t* a_app_select, render
     }
     case PARAM_U8:
     {
-        const uint8_t val = get_u8_param(param, (void*)a_app_select->param_buf);
+        const u8 val = get_u8_param(param, (void*)a_app_select->param_buf);
         char str[3] = { 0, 0, 0 };
         if (val)
         {
@@ -142,8 +148,8 @@ static inline void display_param_info(app_select_context_t* a_app_select, render
 
 static inline void display_param_save_info(app_select_context_t* a_app_select, render_context_t* a_ctx)
 {
-    uint16_t save_color = COLOR_GREEN;
-    uint16_t reload_color = COLOR_GREEN;
+    u16 save_color = COLOR_GREEN;
+    u16 reload_color = COLOR_GREEN;
     if (a_app_select->cursor == CURSOR_TYPE_SAVE_DEFAULT)
         save_color = COLOR_RED;
     else if (a_app_select->cursor == CURSOR_TYPE_RELOAD_DEFAULT)
@@ -153,15 +159,15 @@ static inline void display_param_save_info(app_select_context_t* a_app_select, r
     render_8x16glyphs(a_ctx, "reload", 6, 4, 3, reload_color, COLOR_BLACK, 16, a_ctx->height / 6 * 4);
 }
 
-static inline void modify_param(void* a_data, param_type_t a_type, int a_incr, int a_min, int a_max)
+static inline void modify_param(void* a_data, param_type_t a_type, isize a_incr, isize a_min, isize a_max)
 {
     switch (a_type)
     {
     case PARAM_U16:
-        (*(uint16_t*)a_data) = (uint16_t)wrapminmax((*(uint16_t*)a_data) += a_incr, a_min, a_max);
+        (*(u16*)a_data) = (u16)wrapminmax((*(u16*)a_data) += a_incr, a_min, a_max);
         break;
     case PARAM_U8:
-        (*(uint8_t*)a_data) = (uint8_t)wrapminmax((*(uint8_t*)a_data) += a_incr, a_min, a_max);
+        (*(u8*)a_data) = (u8)wrapminmax((*(u8*)a_data) += a_incr, a_min, a_max);
         break;
     case PARAM_BOOL:
         (*(bool*)a_data) = !(*(bool*)a_data);
@@ -182,11 +188,11 @@ static inline void load_app_params(app_select_context_t* a_app_select)
     fs_read(cursor->name, cursor->name_len, a_app_select->param_buf, a_app_select->param_buf_size);
 }
 
-static void move_cursor(app_select_context_t* a_app_select, int a_incr)
+static void move_cursor(app_select_context_t* a_app_select, isize a_incr)
 {
     if (a_app_select->cursor == CURSOR_TYPE_APP)
     {
-        int new_pos = a_app_select->cursor_app + a_incr;
+        isize new_pos = a_app_select->cursor_app + a_incr;
         a_app_select->cursor_app = wrap(a_app_select->cursor_app + a_incr, a_app_select->app_count);
         a_app_select->cursor_param = 0;
         load_app_params(a_app_select);
@@ -213,8 +219,8 @@ static void move_cursor(app_select_context_t* a_app_select, int a_incr)
 
 static void change_app(app_select_context_t* a_app_select, app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx)
 {
-    int16_t cursor = a_app_select->cursor_app;
-    uint8_t param_buf[64];
+    i16 cursor = a_app_select->cursor_app;
+    u8 param_buf[64];
     memcpy(param_buf, a_app_select->param_buf, sizeof(param_buf));
     a_app->close(a_app);
 
@@ -246,7 +252,7 @@ void app_select_init_app(app_context_t* a_app, memory_arena_t* a_arena, render_c
     app_select_render(a_app, a_ctx);
 }
 
-app_update_status_t app_select_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
+app_update_status_t app_select_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, u32 a_now_ms)
 {
     app_select_context_t* app_select = (app_select_context_t*)a_app->user_data;
     button_update(&app_select->incr_button, a_now_ms);
@@ -254,13 +260,13 @@ app_update_status_t app_select_update(app_context_t* a_app, memory_arena_t* a_ar
     button_update(&app_select->select_app_button, a_now_ms);
     button_update(&app_select->select_app_button_extra, a_now_ms);
 
-    int incr_cursor = button_pressed(&app_select->incr_button);
+    isize incr_cursor = button_pressed(&app_select->incr_button);
     if (incr_cursor != 0)
     {
         move_cursor(app_select, incr_cursor);
         return APP_RENDER;
     }
-    int switch_cursor = button_pressed(&app_select->next_button);
+    isize switch_cursor = button_pressed(&app_select->next_button);
     if (switch_cursor != 0)
     {
         app_select->cursor = wrap(app_select->cursor + switch_cursor, CURSOR_TYPE_MAX);
@@ -300,7 +306,7 @@ void app_select_default_sizes(size_t* a_param_buf_size, size_t* a_desc_count)
     a_desc_count = 0;
 }
 
-void app_select_default_params(uint8_t* a_param_buf, app_param_descriptor_t* a_descs)
+void app_select_default_params(u8* a_param_buf, app_param_descriptor_t* a_descs)
 {
     // dummy
     (void)a_param_buf;

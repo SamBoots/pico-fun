@@ -5,18 +5,17 @@ typedef struct render_context_t render_context_t;
 
 typedef enum SCREEN_DRIVER
 {
-    DRIVER_SSD1306,
     DRIVER_ST7789
 } SCREEN_DRIVER;
 
-int render_load_func(render_context_t* a_ctx, SCREEN_DRIVER a_driver);
-int render_init_context(render_context_t* a_ctx, uint16_t a_w, uint16_t a_h, uint16_t a_x_offset, uint16_t a_y_offset, uint16_t a_mhz);
-int render_8x16glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_front_color, uint16_t a_back_color, uint16_t a_x, uint16_t a_y);
-int render_4x8glyphs(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_front_color, uint16_t a_back_color, uint16_t a_x, uint16_t a_y);
-int render_8x16glyphs_2x2border(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_front_color, uint16_t a_back_color, uint16_t a_x, uint16_t a_y);
-int render_4x8glyphs_2x2border(render_context_t* a_ctx, const char* a_str, uint16_t a_len, uint16_t a_spacing, uint16_t a_scale, uint16_t a_front_color, uint16_t a_back_color, uint16_t a_x, uint16_t a_y);
-int render_draw_rect(render_context_t* a_ctx, uint16_t a_x0, uint16_t a_x1, uint16_t a_y0, uint16_t a_y1, uint16_t a_color);
-int render_fill(render_context_t* a_ctx, uint16_t a_color);
-int render_flush(render_context_t* a_ctx);
+ERROR_TYPE_T render_load_func(render_context_t* a_ctx, SCREEN_DRIVER a_driver);
+ERROR_TYPE_T render_init_context(render_context_t* a_ctx, u16 a_w, u16 a_h, u16 a_x_offset, u16 a_y_offset, u8 a_screen_index);
+void render_8x16glyphs(render_context_t* a_ctx, const char* a_str, u16 a_len, u16 a_spacing, u16 a_scale, u16 a_front_color, u16 a_back_color, u16 a_x, u16 a_y);
+void render_4x8glyphs(render_context_t* a_ctx, const char* a_str, u16 a_len, u16 a_spacing, u16 a_scale, u16 a_front_color, u16 a_back_color, u16 a_x, u16 a_y);
+void render_8x16glyphs_2x2border(render_context_t* a_ctx, const char* a_str, u16 a_len, u16 a_spacing, u16 a_scale, u16 a_front_color, u16 a_back_color, u16 a_x, u16 a_y);
+void render_4x8glyphs_2x2border(render_context_t* a_ctx, const char* a_str, u16 a_len, u16 a_spacing, u16 a_scale, u16 a_front_color, u16 a_back_color, u16 a_x, u16 a_y);
+void render_draw_rect(render_context_t* a_ctx, u16 a_x0, u16 a_x1, u16 a_y0, u16 a_y1, u16 a_color);
+void render_fill(render_context_t* a_ctx, u16 a_color);
+void render_flush(render_context_t* a_ctx);
 
 #endif // RENDERER_H

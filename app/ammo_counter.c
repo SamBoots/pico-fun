@@ -1,25 +1,25 @@
-#include "pico/stdlib.h"
+#include "defines/types.h"
 #include "app.h"
-#include "../graphics/render_types.h"
-#include "../graphics/renderer.h"
-#include "../io/io_types.h"
-#include "../io/button.h"
-#include "../io/nfc.h"
-#include "../memory/memory_arena.h"
+#include "graphics/render_types.h"
+#include "graphics/renderer.h"
+#include "io/io_types.h"
+#include "io/button.h"
+#include "io/nfc.h"
+#include "memory/memory_arena.h"
 
 #define AMMO_GUID 0xDEADBEEF
 
 typedef struct ammo_counter_params_t
 {
-    uint8_t max_ammo;
-    uint8_t fire_rate;
+    u8 max_ammo;
+    u8 fire_rate;
 } ammo_counter_params_t;
 
 typedef struct nfc_ammo_struct_t
 {
-    uint32_t ammo_guid;
-    uint8_t max_ammo;
-    uint8_t current_ammo;
+    u32 ammo_guid;
+    u8 max_ammo;
+    u8 current_ammo;
 } nfc_ammo_struct_t;
 
 typedef enum { GUN_SAFE, GUN_SEMI, GUN_AUTO } gun_status_t;
@@ -38,15 +38,15 @@ typedef struct gun_context_t
     nfc_context_t nfc;
 
     bool magazine_loaded;
-    uint16_t max_ammo;
-    uint16_t current_ammo;
-    uint16_t fire_rate_ms;
-    uint32_t last_shot_ms;
+    u16 max_ammo;
+    u16 current_ammo;
+    u16 fire_rate_ms;
+    u32 last_shot_ms;
 } gun_context_t;
 
-static bool gun_fire(gun_context_t* a_gun_ctx, uint32_t a_now_ms)
+static bool gun_fire(gun_context_t* a_gun_ctx, u32 a_now_ms)
 {
-    if (a_gun_ctx->current_ammo && (uint32_t)(a_now_ms - a_gun_ctx->last_shot_ms) > a_gun_ctx->fire_rate_ms)
+    if (a_gun_ctx->current_ammo && (u32)(a_now_ms - a_gun_ctx->last_shot_ms) > a_gun_ctx->fire_rate_ms)
     {
         a_gun_ctx->current_ammo = a_gun_ctx->current_ammo - 1;
         a_gun_ctx->last_shot_ms = a_now_ms;
@@ -111,7 +111,7 @@ static void gun_update_screen(gun_context_t* a_gun_ctx, render_context_t* a_ctx)
     }
     render_draw_rect(a_ctx, 12, 12 + 9 * 8, 5, 5 + 16 * 2, COLOR_BLACK);
 
-    uint16_t scale = 15;
+    u16 scale = 15;
     render_8x16glyphs(a_ctx, digits, 2, 1, scale, COLOR_RED, COLOR_BLACK, 20, 10);
     render_flush(a_ctx);
 
@@ -129,7 +129,7 @@ static void gun_update_screen(gun_context_t* a_gun_ctx, render_context_t* a_ctx)
     }
 }
 
-static app_update_status_t ammo_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, uint32_t a_now_ms)
+static app_update_status_t ammo_update(app_context_t* a_app, memory_arena_t* a_arena, render_context_t* a_ctx, u32 a_now_ms)
 {
     gun_context_t* gun_ctx = (gun_context_t*)a_app->user_data;
     button_update(&gun_ctx->fire_button, a_now_ms);

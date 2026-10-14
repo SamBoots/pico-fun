@@ -7,7 +7,7 @@
 #define FONT8X16_LOWER_FIRST  'a'
 #define FONT8X16_LOWER_COUNT  26
 
-static const uint8_t font8x16_digits[FONT8X16_DIGITS_COUNT][16] = {
+static const u8 font8x16_digits[FONT8X16_DIGITS_COUNT][16] = {
     { // 0
         0b00111100,
         0b01100110,
@@ -190,7 +190,7 @@ static const uint8_t font8x16_digits[FONT8X16_DIGITS_COUNT][16] = {
     }
 };
 
-static const uint8_t font8x16_lower[FONT8X16_LOWER_COUNT][16] = {
+static const u8 font8x16_lower[FONT8X16_LOWER_COUNT][16] = {
     { // a
         0b00000000,
         0b00000000,
@@ -661,13 +661,13 @@ static const uint8_t font8x16_lower[FONT8X16_LOWER_COUNT][16] = {
     }
 };
 
-static inline const uint8_t* font8x16_glyph(char a_c)
+static inline const u8* font8x16_glyph(char a_c)
 {
     if (a_c >= '0' && a_c <= '9')
-        return font8x16_digits[(uint8_t)(a_c - '0')];
+        return font8x16_digits[(u8)(a_c - '0')];
     if (a_c >= 'a' && a_c <= 'z')
-        return font8x16_lower[(uint8_t)(a_c - 'a')];
-    return (const uint8_t *)0;
+        return font8x16_lower[(u8)(a_c - 'a')];
+    return (const u8 *)0;
 }
 
 #endif // FONT8X16_H
