@@ -1,7 +1,14 @@
 #ifndef BUTTON_H
 #define BUTTON_H
 
-typedef struct button_context_t button_context_t;
+typedef struct button_context_t
+{
+    u32 last_change_ms;
+    u16 debounce_ms;
+    u8 pin;
+    bool previous;
+    bool current;
+} button_context_t;
 
 bool button_init_context(button_context_t* a_ctx, u8 a_pin, u16 a_debounce_ms);
 bool button_free_context(button_context_t* a_ctx);

@@ -1,4 +1,4 @@
-#include "defines/types.h"
+#include "core/types.h"
 #include "pico/flash.h"
 #include "hardware/flash.h"
 #include "hardware/sync.h"

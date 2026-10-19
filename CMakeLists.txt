@@ -43,8 +43,10 @@ option(ADD_DEBUG_APPS "add test apps" ON)
 
 add_executable(S_OS
 main.c
-app/app_select.c
-memory/memory_arena.c
+core/app_select.c
+core/memory_arena.c
+core/common.c
+core/core.c
 graphics/renderer.c
 graphics/drivers/st7789.c
 io/drivers/pn532.c

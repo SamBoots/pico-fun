@@ -1,11 +1,10 @@
-#include "defines/types.h"
+#include "core/types.h"
 #include "app.h"
-#include "io/io_types.h"
 #include "io/button.h"
 #include "io/nfc.h"
 #include "graphics/render_types.h"
 #include "graphics/renderer.h"
-#include "memory/memory_arena.h"
+#include "core/memory_arena.h"
 
 // replace these with own solution
 #include <stdio.h>

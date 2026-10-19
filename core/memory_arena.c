@@ -1,4 +1,4 @@
-#include "defines/types.h"
+#include "types.h"
 #include "memory_arena.h"
 #include "string.h"
 

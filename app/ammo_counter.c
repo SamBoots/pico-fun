@@ -1,11 +1,10 @@
-#include "defines/types.h"
+#include "core/types.h"
 #include "app.h"
 #include "graphics/render_types.h"
 #include "graphics/renderer.h"
-#include "io/io_types.h"
 #include "io/button.h"
 #include "io/nfc.h"
-#include "memory/memory_arena.h"
+#include "core/memory_arena.h"
 
 #define AMMO_GUID 0xDEADBEEF
 

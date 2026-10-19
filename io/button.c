@@ -1,6 +1,5 @@
-#include "defines/types.h"
+#include "core/types.h"
 #include "os/os.h"
-#include "io_types.h"
 #include "button.h"
 
 bool button_init_context(button_context_t* a_ctx, u8 a_pin, u16 a_debounce_ms)

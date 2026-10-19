@@ -1,4 +1,4 @@
-#include "defines/types.h"
+#include "core/types.h"
 #include "render_types.h"
 #include "renderer.h"
 #include "drivers/st7789.h"

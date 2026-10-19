@@ -1,4 +1,4 @@
-#include "defines/types.h"
+#include "core/types.h"
 #include "hardware/i2c.h"
 #include "drivers/pn532.h"
 #include "nfc.h"
