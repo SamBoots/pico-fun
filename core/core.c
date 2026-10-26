@@ -9,7 +9,7 @@
 #include "graphics/renderer.h"
 
 // menu stuff, might change this
-#include "app_select.h"
+#include "app_menu.h"
 
 #define _LED_BLINK
 
@@ -19,8 +19,12 @@
 
 #define TEST_H 240
 #define TEST_W 280
+
+typedef void (*update_loop_f)(u32 a_now_ms, app_context_t* a_app);
+
 static render_context_t g_render_ctx;
 static memory_arena_t g_memory_arena;
+static update_loop_f g_update_loop;
 
 static void switch_app(app_context_t* a_app, app_init_t a_init, void* a_params)
 {
@@ -39,6 +43,39 @@ typedef struct core_context_t
     u32 last_change_ms;
     u32 ms_switch;
 } core_context_t;
+
+void update_loop_menu(u32 a_now_ms, app_context_t* a_app);
+void update_loop_app(u32 a_now_ms, app_context_t* a_app);
+
+void update_loop_app(u32 a_now_ms, app_context_t* a_app)
+{
+    app_update_status_t update_status = a_app->update(a_app, &g_memory_arena, &g_render_ctx, a_now_ms);
+    switch (update_status)
+    {
+    case APP_RENDER:
+        a_app->render(a_app, &g_render_ctx);
+        break;
+    case APP_EXIT:
+        g_update_loop = update_loop_menu;
+        app_menu_init(&g_memory_arena, &g_render_ctx);
+        break;
+    }
+}
+
+void update_loop_menu(u32 a_now_ms, app_context_t* a_app)
+{
+    app_update_status_t update_status = app_menu_update(a_app, &g_memory_arena, &g_render_ctx, a_now_ms);
+    switch (update_status)
+    {
+    case APP_RENDER:
+        app_menu_render(&g_render_ctx);
+        break;
+    case APP_EXIT:
+        g_update_loop = update_loop_app;
+        app_menu_close();
+        break;
+    }
+}
 
 void update_loop_core(void)
 {
@@ -68,7 +105,7 @@ void update_loop_core(void)
 
     while (true)
     {
-        uint32_t now_ms = to_ms_since_boot(get_absolute_time());
+        u32 now_ms = to_ms_since_boot(get_absolute_time());
         button_update(&exit_app_0, now_ms);
         button_update(&exit_app_1, now_ms);
 
@@ -77,16 +114,7 @@ void update_loop_core(void)
             switch_app(&app, app_select_init_app, NULL);
         }
 
-        app_update_status_t update_status = app.update(&app, &g_memory_arena, &g_render_ctx, now_ms);
-        switch (update_status)
-        {
-        case APP_RENDER:
-            app.render(&app, &g_render_ctx);
-            break;
-        case APP_EXIT:
-            switch_app(&app, app_select_init_app, NULL);
-            break;
-        }
+        g_update_loop(now_ms, &app);
 
         #ifdef _LED_BLINK
         gpio_put(PICO_DEFAULT_LED_PIN, delay_bool_update(&led_bool, now_ms));

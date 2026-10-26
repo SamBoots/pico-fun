@@ -43,7 +43,7 @@ option(ADD_DEBUG_APPS "add test apps" ON)
 
 add_executable(S_OS
 main.c
-core/app_select.c
+core/app_menu.c
 core/memory_arena.c
 core/common.c
 core/core.c

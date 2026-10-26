@@ -5,7 +5,7 @@ typedef struct render_context_t render_context_t;
 typedef struct memory_arena_t memory_arena_t;
 typedef struct app_context_t app_context_t;
 
-typedef enum { APP_OK, APP_ERR, APP_RENDER, APP_EXIT, APP_EXIT_NO_CLOSE } app_update_status_t;
+typedef enum { APP_OK, APP_ERR, APP_RENDER, APP_EXIT } app_update_status_t;
 
 typedef enum { PARAM_U16, PARAM_U8, PARAM_BOOL } param_type_t;
 
